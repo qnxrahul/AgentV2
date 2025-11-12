@@ -274,6 +274,7 @@ const extractSubtitleFromCard = (card, layoutType) => {
   }
 
   const fallbackMessage = {
+    multi: "Multiple card views reconstructed from the uploaded UI.",
     video: "Rich media playback experience.",
     audio: "Stream and review audio content.",
     media: "Interactive media presentation.",
@@ -286,6 +287,7 @@ const extractSubtitleFromCard = (card, layoutType) => {
 };
 
 const heroIconMap = {
+  multi: "🗂️",
   video: "🎬",
   audio: "🎧",
   media: "🖼️",
@@ -295,12 +297,59 @@ const heroIconMap = {
 };
 
 const heroStyleMap = {
+  multi: "emphasis",
   video: "accent",
   audio: "accent",
   media: "accent",
   form: "emphasis",
   text: "default",
   default: "default",
+};
+
+const collectCardsFromPayload = (payload) => {
+  if (Array.isArray(payload)) {
+    return payload
+      .filter(Boolean)
+      .map((entry) => ensureAdaptiveCardStructure(entry));
+  }
+  return [ensureAdaptiveCardStructure(payload)];
+};
+
+const normalizeAdaptiveCardPayload = (payload) => {
+  const cards = collectCardsFromPayload(payload);
+
+  if (cards.length <= 1) {
+    return cards[0];
+  }
+
+  const sections = cards.map((card, index) => {
+    const items = Array.isArray(card.body) ? card.body : [];
+    const actions =
+      Array.isArray(card.actions) && card.actions.length > 0
+        ? [
+            {
+              type: "ActionSet",
+              actions: card.actions,
+            },
+          ]
+        : [];
+
+    return {
+      type: "Container",
+      id: `__cardSection_${index}`,
+      style: index % 2 === 0 ? "default" : "emphasis",
+      spacing: index === 0 ? "Large" : "Medium",
+      bleed: true,
+      items: [...items, ...actions],
+    };
+  });
+
+  return {
+    $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+    type: "AdaptiveCard",
+    version: "1.5",
+    body: sections,
+  };
 };
 
 const createHeroLayout = (layoutType, title, subtitle) => ({
@@ -354,7 +403,8 @@ const createHeroLayout = (layoutType, title, subtitle) => ({
 });
 
 const augmentAdaptiveCardLayout = (rawPayload) => {
-  const adaptiveCard = ensureAdaptiveCardStructure(rawPayload);
+  const sourceCards = collectCardsFromPayload(rawPayload);
+  const adaptiveCard = normalizeAdaptiveCardPayload(rawPayload);
 
   if (!Array.isArray(adaptiveCard.body)) {
     adaptiveCard.body = [];
@@ -367,9 +417,24 @@ const augmentAdaptiveCardLayout = (rawPayload) => {
     return adaptiveCard;
   }
 
-  const layoutType = detectCardLayout(adaptiveCard);
-  const title = extractTitleFromCard(adaptiveCard);
-  const subtitle = extractSubtitleFromCard(adaptiveCard, layoutType);
+  const layoutType =
+    sourceCards.length > 1
+      ? sourceCards
+          .map((card) => detectCardLayout(card))
+          .find((type) => type !== "default") || "multi"
+      : detectCardLayout(sourceCards[0]);
+
+  const title =
+    sourceCards.length > 1
+      ? `${sourceCards.length} Adaptive Cards`
+      : extractTitleFromCard(sourceCards[0]);
+
+  const subtitle =
+    sourceCards.length > 1
+      ? extractSubtitleFromCard(sourceCards[0], layoutType) ||
+        "Multiple card views reconstructed from the uploaded UI."
+      : extractSubtitleFromCard(sourceCards[0], layoutType);
+
   const heroContainer = createHeroLayout(layoutType, title, subtitle);
 
   adaptiveCard.body = [heroContainer, ...adaptiveCard.body];
