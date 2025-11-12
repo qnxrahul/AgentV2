@@ -246,8 +246,8 @@ header p {
 }
 
 .card-host .ac-adaptiveCard {
-  min-width: 440px;
-  max-width: 960px;
+  min-width: 520px;
+  max-width: 1024px;
   width: 100%;
   margin: 0 auto;
   border-radius: 16px;
@@ -279,10 +279,69 @@ header p {
 }
 
 .card-host--inline .ac-adaptiveCard {
-  max-width: 640px;
+  max-width: 720px;
   box-shadow:
     0 10px 24px rgba(15, 23, 42, 0.12),
     0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.card-fancy-shell {
+  position: relative;
+  border-radius: 28px;
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.16), rgba(30, 41, 59, 0.08));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  overflow: visible;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.card-fancy-shell--primary {
+  padding: 42px 36px;
+  backdrop-filter: blur(10px);
+}
+
+.card-fancy-shell--inline {
+  padding: 28px 24px;
+}
+
+.card-fancy-shell:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 28px 60px rgba(15, 23, 42, 0.24),
+    0 16px 32px rgba(15, 23, 42, 0.12);
+}
+
+.card-fancy-glow {
+  position: absolute;
+  inset: 14px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 110deg,
+    rgba(96, 165, 250, 0.55),
+    rgba(14, 165, 233, 0.35),
+    rgba(167, 139, 250, 0.4),
+    rgba(96, 165, 250, 0.55)
+  );
+  filter: blur(58px);
+  opacity: 0.85;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.card-fancy-shell:hover .card-fancy-glow {
+  opacity: 1;
+}
+
+.card-fancy-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0));
+  pointer-events: none;
 }
 
 .fancy-card {
@@ -542,6 +601,10 @@ header p {
 @media (max-width: 600px) {
   .app {
     padding: 32px 16px 64px;
+  }
+
+  .card-host .ac-adaptiveCard {
+    min-width: 320px;
   }
 
   header h1 {

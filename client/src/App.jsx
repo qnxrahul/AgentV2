@@ -767,7 +767,12 @@ function AdaptiveCardRenderer({ payload }) {
     hostRef.current.appendChild(rendered);
   }, [payload]);
 
-  return <div className="card-host card-host--inline" ref={hostRef} />;
+  return (
+    <div className="card-fancy-shell card-fancy-shell--inline">
+      <div className="card-fancy-glow" />
+      <div className="card-host card-host--inline" ref={hostRef} />
+    </div>
+  );
 }
 
 function App() {
@@ -994,7 +999,10 @@ function App() {
             </div>
             <div className="card-preview">
               <div className="card-preview-stage">
-                <div className="card-host" ref={cardHostRef} />
+                  <div className="card-fancy-shell card-fancy-shell--primary">
+                    <div className="card-fancy-glow" />
+                    <div className="card-host card-host--primary" ref={cardHostRef} />
+                  </div>
               </div>
             </div>
           </div>
