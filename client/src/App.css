@@ -401,6 +401,86 @@ header p {
   width: 100%;
 }
 
+.card-overlay {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.overlay-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+  pointer-events: auto;
+}
+
+.overlay-chip::before {
+  content: attr(data-icon);
+  font-size: 0.9rem;
+}
+
+.overlay-chip--summary {
+  background: linear-gradient(120deg, rgba(59, 130, 246, 0.16), rgba(37, 99, 235, 0.14));
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #1d4ed8;
+}
+
+.overlay-chip--media {
+  background: rgba(14, 165, 233, 0.18);
+  border-color: rgba(14, 165, 233, 0.32);
+  color: #0369a1;
+}
+
+.overlay-chip--video {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.32);
+  color: #1d4ed8;
+}
+
+.overlay-chip--audio {
+  background: rgba(129, 140, 248, 0.18);
+  border-color: rgba(129, 140, 248, 0.32);
+  color: #4c1d95;
+}
+
+.overlay-chip--file {
+  background: rgba(163, 163, 163, 0.2);
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #334155;
+}
+
+.overlay-chip--text {
+  background: rgba(134, 239, 172, 0.22);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #047857;
+}
+
+.overlay-chip--image {
+  background: rgba(165, 180, 252, 0.19);
+  border-color: rgba(129, 140, 248, 0.32);
+  color: #4338ca;
+}
+
+.overlay-chip--layout {
+  background: rgba(250, 204, 21, 0.2);
+  border-color: rgba(250, 204, 21, 0.35);
+  color: #92400e;
+}
+
 .card-fancy-shell:hover {
   transform: translateY(-2px);
   box-shadow:

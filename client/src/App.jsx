@@ -476,7 +476,30 @@ const mapCardsWithMetadata = (payload) => {
     const inputCount = elements.filter(
       (el) => typeof el.type === "string" && el.type.startsWith("Input.")
     ).length;
-    const hasMedia = elements.some((el) => el.type === "Media");
+    const textCount = elements.filter((el) =>
+      ["TextBlock", "RichTextBlock"].includes(el.type || "")
+    ).length;
+    const imageCount = elements.filter((el) => el.type === "Image").length;
+    const columnSetCount = elements.filter((el) => el.type === "ColumnSet").length;
+    let videoCount = 0;
+    let audioCount = 0;
+    const mediaElements = elements.filter((el) => el.type === "Media");
+    mediaElements.forEach((media) => {
+      if (!Array.isArray(media.sources)) return;
+      media.sources.forEach((source) => {
+        const mime = source?.mimeType || "";
+        if (typeof mime === "string") {
+          if (mime.startsWith("video")) {
+            videoCount += 1;
+          } else if (mime.startsWith("audio")) {
+            audioCount += 1;
+          }
+        }
+      });
+    });
+    const fileUploadCount = elements.filter((el) => el.type === "Input.File").length;
+    const hasMedia = mediaElements.length > 0;
+    const hasFileUpload = fileUploadCount > 0;
     return {
       card,
       layoutType,
@@ -487,6 +510,13 @@ const mapCardsWithMetadata = (payload) => {
       inputCount,
       hasMedia,
       index,
+      textCount,
+      imageCount,
+      columnSetCount,
+      videoCount,
+      audioCount,
+      fileUploadCount,
+      hasFileUpload,
     };
   });
 };
@@ -769,7 +799,7 @@ const augmentAdaptiveCardLayout = (rawPayload) => {
   return { card: adaptiveCard, descriptors };
 };
 
-function AdaptiveCardRenderer({ payload, variant = "inline" }) {
+function AdaptiveCardRenderer({ payload, variant = "inline", metadata }) {
   const hostRef = useRef(null);
 
   useEffect(() => {
@@ -802,9 +832,84 @@ function AdaptiveCardRenderer({ payload, variant = "inline" }) {
     variant === "primary" ? "card-host--primary" : "card-host--inline",
   ].join(" ");
 
+  const overlayChips = useMemo(() => {
+    if (!metadata) return [];
+    const chips = [];
+    if (metadata.summary) {
+      chips.push({
+        icon: "✨",
+        label: metadata.summary,
+        className: "overlay-chip--summary",
+      });
+    }
+    if (metadata.textCount > 0) {
+      chips.push({
+        icon: "📝",
+        label: `${metadata.textCount} text`,
+        className: "overlay-chip--text",
+      });
+    }
+    if (metadata.imageCount > 0) {
+      chips.push({
+        icon: "🖼️",
+        label: `${metadata.imageCount} images`,
+        className: "overlay-chip--image",
+      });
+    }
+    if (metadata.videoCount > 0) {
+      chips.push({
+        icon: "🎬",
+        label: `${metadata.videoCount} video`,
+        className: "overlay-chip--video",
+      });
+    }
+    if (metadata.audioCount > 0) {
+      chips.push({
+        icon: "🎧",
+        label: `${metadata.audioCount} audio`,
+        className: "overlay-chip--audio",
+      });
+    }
+    if (metadata.fileUploadCount > 0 || metadata.hasFileUpload) {
+      chips.push({
+        icon: "📁",
+        label: `${metadata.fileUploadCount || 1} upload`,
+        className: "overlay-chip--file",
+      });
+    }
+    if (metadata.columnSetCount > 0) {
+      chips.push({
+        icon: "🧩",
+        label: `${metadata.columnSetCount} column sets`,
+        className: "overlay-chip--layout",
+      });
+    }
+    if (metadata.hasMedia && metadata.videoCount === 0 && metadata.audioCount === 0) {
+      chips.push({
+        icon: "🎞️",
+        label: "Media",
+        className: "overlay-chip--media",
+      });
+    }
+    return chips;
+  }, [metadata]);
+
   return (
     <div className={shellClassNames}>
       <div className="card-fancy-glow" />
+      {overlayChips.length > 0 && (
+        <div className="card-overlay">
+          {overlayChips.map((chip, idx) => (
+            <span
+              key={`${chip.label}-${idx}`}
+              className={`overlay-chip ${chip.className}`}
+              data-icon={chip.icon}
+            >
+              {chip.label}
+            </span>
+          ))}
+        </div>
+      )}
       <div className={hostClassNames} ref={hostRef} />
     </div>
   );
@@ -987,9 +1092,27 @@ function App() {
         acc.actions += descriptor.actionCount;
         acc.inputs += descriptor.inputCount;
         acc.media += descriptor.hasMedia ? 1 : 0;
+        acc.videos += descriptor.videoCount;
+        acc.audios += descriptor.audioCount;
+        acc.files += descriptor.fileUploadCount;
+        acc.textBlocks += descriptor.textCount;
+        acc.images += descriptor.imageCount;
+        acc.columns += descriptor.columnSetCount;
         return acc;
       },
-      { cards: 0, elements: 0, actions: 0, inputs: 0, media: 0 }
+      {
+        cards: 0,
+        elements: 0,
+        actions: 0,
+        inputs: 0,
+        media: 0,
+        videos: 0,
+        audios: 0,
+        files: 0,
+        textBlocks: 0,
+        images: 0,
+        columns: 0,
+      }
     );
   }, [cardDescriptors]);
 
@@ -1043,7 +1166,7 @@ function App() {
 
         {result && (
           <section className="results results--no-stage">
-            {normalizedCard && (
+              {normalizedCard && (
               <div className="focus-card">
                 <div className="focus-card-header">
                   <div>
@@ -1071,10 +1194,57 @@ function App() {
                           {aggregateStats.media} Media Blocks
                         </span>
                       )}
+                        {aggregateStats.textBlocks > 0 && (
+                          <span className="focus-chip focus-chip--muted">
+                            {aggregateStats.textBlocks} Text Blocks
+                          </span>
+                        )}
+                        {aggregateStats.images > 0 && (
+                          <span className="focus-chip focus-chip--muted">
+                            {aggregateStats.images} Images
+                          </span>
+                        )}
+                        {aggregateStats.files > 0 && (
+                          <span className="focus-chip focus-chip--muted">
+                            {aggregateStats.files} File Uploads
+                          </span>
+                        )}
+                        {aggregateStats.videos > 0 && (
+                          <span className="focus-chip focus-chip--muted">
+                            {aggregateStats.videos} Videos
+                          </span>
+                        )}
+                        {aggregateStats.audios > 0 && (
+                          <span className="focus-chip focus-chip--muted">
+                            {aggregateStats.audios} Audio Clips
+                          </span>
+                        )}
+                        {aggregateStats.columns > 0 && (
+                          <span className="focus-chip focus-chip--muted">
+                            {aggregateStats.columns} Column Sets
+                          </span>
+                        )}
                     </div>
                   )}
                 </div>
-                <AdaptiveCardRenderer payload={normalizedCard} variant="primary" />
+                  <AdaptiveCardRenderer
+                    payload={normalizedCard}
+                    variant="primary"
+                    metadata={
+                      aggregateStats
+                        ? {
+                            summary: "Composite Layout",
+                            textCount: aggregateStats.textBlocks,
+                            imageCount: aggregateStats.images,
+                            videoCount: aggregateStats.videos,
+                            audioCount: aggregateStats.audios,
+                            fileUploadCount: aggregateStats.files,
+                            columnSetCount: aggregateStats.columns,
+                            hasMedia: aggregateStats.media > 0,
+                          }
+                        : undefined
+                    }
+                  />
                 {aggregateStats && (
                   <div className="focus-card-meta">
                     <span className="focus-chip focus-chip--muted">
@@ -1095,13 +1265,33 @@ function App() {
                   actionCount,
                   inputCount,
                   hasMedia,
+                  textCount,
+                  imageCount,
+                  columnSetCount,
+                  videoCount,
+                  audioCount,
+                  fileUploadCount,
+                  hasFileUpload,
                   index: cardIndex,
                 }) => (
                   <div
                     key={`card-descriptor-${cardIndex}`}
                     className="multi-card-item multi-card-item--standalone"
                   >
-                  <AdaptiveCardRenderer payload={card} />
+                    <AdaptiveCardRenderer
+                      payload={card}
+                      metadata={{
+                        summary,
+                        textCount,
+                        imageCount,
+                        videoCount,
+                        audioCount,
+                        fileUploadCount,
+                        columnSetCount,
+                        hasFileUpload,
+                        hasMedia,
+                      }}
+                    />
                   <div className="card-summary card-summary--standalone">
                       <span className="card-chip card-chip--index">
                         Card {cardIndex + 1}
@@ -1123,7 +1313,37 @@ function App() {
                           {inputCount} Inputs
                         </span>
                       )}
-                      {hasMedia && (
+                        {textCount > 0 && (
+                          <span className="card-chip card-chip--meta">
+                            {textCount} Text
+                          </span>
+                        )}
+                        {imageCount > 0 && (
+                          <span className="card-chip card-chip--meta">
+                            {imageCount} Images
+                          </span>
+                        )}
+                        {columnSetCount > 0 && (
+                          <span className="card-chip card-chip--meta">
+                            {columnSetCount} Column Sets
+                          </span>
+                        )}
+                        {fileUploadCount > 0 && (
+                          <span className="card-chip card-chip--meta">
+                            {fileUploadCount} File Uploads
+                          </span>
+                        )}
+                        {videoCount > 0 && (
+                          <span className="card-chip card-chip--meta">
+                            {videoCount} Videos
+                          </span>
+                        )}
+                        {audioCount > 0 && (
+                          <span className="card-chip card-chip--meta">
+                            {audioCount} Audio
+                          </span>
+                        )}
+                        {hasMedia && videoCount === 0 && audioCount === 0 && (
                         <span className="card-chip card-chip--media">Media</span>
                       )}
                     {summary && (
