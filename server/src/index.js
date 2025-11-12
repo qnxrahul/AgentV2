@@ -80,8 +80,7 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
             },
             {
               type: "input_image",
-              mime_type: mimeType,
-              image_base64: base64Image,
+              image_url: `data:${mimeType};base64,${base64Image}`,
             },
           ],
         },
