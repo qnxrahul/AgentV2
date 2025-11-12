@@ -470,7 +470,24 @@ const mapCardsWithMetadata = (payload) => {
     const layoutType = detectCardLayout(card);
     const theme = determineCardTheme(card, index);
     const summary = extractPrimaryText(card);
-    return { card, layoutType, theme, summary };
+    const elements = flattenAdaptiveCardElements(card.body);
+    const elementCount = elements.length;
+    const actionCount = Array.isArray(card.actions) ? card.actions.length : 0;
+    const inputCount = elements.filter(
+      (el) => typeof el.type === "string" && el.type.startsWith("Input.")
+    ).length;
+    const hasMedia = elements.some((el) => el.type === "Media");
+    return {
+      card,
+      layoutType,
+      theme,
+      summary,
+      elementCount,
+      actionCount,
+      inputCount,
+      hasMedia,
+      index,
+    };
   });
 };
 
@@ -994,16 +1011,47 @@ function App() {
         {result && (
           <section className="results results--no-stage">
             <div className="multi-card-grid multi-card-grid--standalone">
-              {cardDescriptors.map(({ card, theme, layoutType, summary }, index) => (
-                <div key={`card-descriptor-${index}`} className="multi-card-item multi-card-item--standalone">
+              {cardDescriptors.map(
+                ({
+                  card,
+                  theme,
+                  layoutType,
+                  summary,
+                  elementCount,
+                  actionCount,
+                  inputCount,
+                  hasMedia,
+                  index: cardIndex,
+                }) => (
+                  <div
+                    key={`card-descriptor-${cardIndex}`}
+                    className="multi-card-item multi-card-item--standalone"
+                  >
                   <AdaptiveCardRenderer payload={card} />
                   <div className="card-summary card-summary--standalone">
+                      <span className="card-chip card-chip--index">
+                        Card {cardIndex + 1}
+                      </span>
                     <span className="card-chip card-chip--style">
                       {theme.charAt(0).toUpperCase() + theme.slice(1)}
                     </span>
                     <span className="card-chip card-chip--layout">
                       {layoutType.charAt(0).toUpperCase() + layoutType.slice(1)}
                     </span>
+                      <span className="card-chip card-chip--meta">
+                        {elementCount} Elements
+                      </span>
+                      <span className="card-chip card-chip--meta">
+                        {actionCount} Actions
+                      </span>
+                      {inputCount > 0 && (
+                        <span className="card-chip card-chip--meta">
+                          {inputCount} Inputs
+                        </span>
+                      )}
+                      {hasMedia && (
+                        <span className="card-chip card-chip--media">Media</span>
+                      )}
                     {summary && (
                       <span className="card-chip card-chip--summary">
                         {summary}
@@ -1011,7 +1059,8 @@ function App() {
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              )}
             </div>
           <div className="result-card result-card--fancy">
             <div className="fancy-card">
