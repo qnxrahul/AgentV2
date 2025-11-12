@@ -459,15 +459,38 @@ const composeMultiCardLayout = (descriptors) => {
     };
   }
 
-  const sections = descriptors.map(({ card, theme }, index) => {
-    const sectionItems = Array.isArray(card.body) ? [...card.body] : [];
-    if (Array.isArray(card.actions) && card.actions.length > 0) {
-      sectionItems.push({
-        type: "ActionSet",
-        spacing: "Medium",
-        actions: card.actions,
+  const sectionElementsFromCard = (card) => {
+    if (!card || typeof card !== "object") {
+      return [];
+    }
+
+    const items = [];
+
+    if (card.type && card.type !== "AdaptiveCard") {
+      items.push(card);
+      return items;
+    }
+
+    if (Array.isArray(card.body)) {
+      items.push(...card.body);
+    }
+
+    if (Array.isArray(card.items)) {
+      items.push(...card.items);
+    }
+
+    if (Array.isArray(card.columns)) {
+      items.push({
+        type: "ColumnSet",
+        columns: card.columns,
       });
     }
+
+    return items;
+  };
+
+  const sections = descriptors.map(({ card, theme }, index) => {
+    const sectionItems = sectionElementsFromCard(card);
 
     const section = {
       type: "Container",
@@ -478,6 +501,14 @@ const composeMultiCardLayout = (descriptors) => {
       bleed: typeof card.bleed === "boolean" ? card.bleed : true,
       items: sectionItems,
     };
+
+    if (Array.isArray(card.actions) && card.actions.length > 0) {
+      section.items.push({
+        type: "ActionSet",
+        spacing: "Medium",
+        actions: card.actions,
+      });
+    }
 
     if (card.backgroundImage) {
       section.backgroundImage = card.backgroundImage;
