@@ -1,6 +1,6 @@
 ## Create Your Own Agent V2
 
-Generate Adaptive Cards for Clara AI directly from UI screenshots or mockups. This project provides a React web client for uploading UI images and a Node/Express backend that calls OpenAI’s multimodal models to infer the corresponding Adaptive Card JSON and a ready-to-use Clara page snippet.
+Generate Adaptive Cards for Clara AI directly from UI screenshots or mockups. This project provides a React web client for uploading UI images and a Node/Express backend that calls OpenRouter’s Llama-vision models to infer the corresponding Adaptive Card JSON and a ready-to-use Clara page snippet.
 
 ### Features
 - Upload UI sketches, Figma exports, or screenshots up to 10 MB.
@@ -11,12 +11,12 @@ Generate Adaptive Cards for Clara AI directly from UI screenshots or mockups. Th
 ### Project Structure
 ```
 /client   → Vite + React single page app
-/server   → Express API for image upload + OpenAI integration
+/server   → Express API for image upload + OpenRouter integration
 ```
 
 ### Prerequisites
 - Node.js 18+
-- An OpenAI API key with access to `gpt-4.1-mini` (or compatible multimodal model).
+- An OpenRouter API key with access to a multimodal Llama model such as `meta-llama/llama-3.2-11b-vision-instruct`.
 
 ### Backend Setup (`/server`)
 1. Install dependencies:
@@ -27,7 +27,7 @@ Generate Adaptive Cards for Clara AI directly from UI screenshots or mockups. Th
 2. Configure environment variables:
    ```bash
    cp .env.example .env
-   # edit .env and set OPENAI_API_KEY (and optional OPENAI_MODEL/PORT)
+   # edit .env and set OPENROUTER_API_KEY (and optional OPENROUTER_* overrides)
    ```
 3. Start the API:
    ```bash
@@ -73,7 +73,7 @@ Generate Adaptive Cards for Clara AI directly from UI screenshots or mockups. Th
   ```
 
 ### Development Notes
-- The backend uses OpenAI’s `responses.create` API. You can swap `OPENAI_MODEL` (e.g., `gpt-4o-mini`) without code changes.
+- The backend calls OpenRouter’s `chat/completions` endpoint. You can swap `OPENROUTER_MODEL` (e.g., another Llama vision model) without code changes.
 - Adaptive Card preview leverages the official `adaptivecards` package for accurate rendering.
 - Clipboard copy and JSON download helpers make it easy to integrate generated payloads into Clara agents.
 
@@ -85,6 +85,6 @@ Generate Adaptive Cards for Clara AI directly from UI screenshots or mockups. Th
 - Consider adding integration tests with mocked OpenAI responses if the project will evolve further.
 
 ### Troubleshooting
-- **401/403 errors**: Check `OPENAI_API_KEY` and model access.
+- **401/403 errors**: Check `OPENROUTER_API_KEY` and ensure your account has access to the selected model.
 - **CORS issues**: Ensure requests go through the Vite proxy or set `VITE_API_BASE_URL` to a permitted origin.
 - **Adaptive Card preview failure**: Inspect the “Model Notes” section; the LLM may have produced an incomplete payload. Adjust the prompt or regenerate.

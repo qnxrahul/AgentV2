@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const dotenv = require("dotenv");
-const { OpenAI } = require("openai");
 
 dotenv.config();
 
@@ -16,7 +15,7 @@ app.use(cors());
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
-const REQUIRED_ENV = ["OPENAI_API_KEY"];
+const REQUIRED_ENV = ["OPENROUTER_API_KEY"];
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missingEnv.length > 0) {
   console.warn(
@@ -25,10 +24,6 @@ if (missingEnv.length > 0) {
     )}. The generation endpoint will not function without them.`
   );
 }
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const systemPrompt = `
 You are an assistant that converts UI screenshots into Adaptive Card payloads for integration with Clara AI.
@@ -45,6 +40,10 @@ You are an assistant that converts UI screenshots into Adaptive Card payloads fo
 - Do not include markdown fences or commentary outside the JSON object.
 `;
 
+const OPENROUTER_API_URL = process.env.OPENROUTER_API_URL || "https://openrouter.ai/api/v1";
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL || "meta-llama/llama-3.2-11b-vision-instruct";
+
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -54,9 +53,9 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
     return res.status(400).json({ error: "uiImage file is required." });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.OPENROUTER_API_KEY) {
     return res.status(500).json({
-      error: "Server misconfiguration: OPENAI_API_KEY is not set.",
+      error: "Server misconfiguration: OPENROUTER_API_KEY is not set.",
     });
   }
 
@@ -64,30 +63,63 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
   const base64Image = req.file.buffer.toString("base64");
 
   try {
-    const response = await openai.responses.create({
-      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-      input: [
-        {
-          role: "system",
-          content: [{ type: "input_text", text: systemPrompt }],
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: "Generate the Adaptive Card response for this UI.",
-            },
-            {
-              type: "input_image",
-              image_url: `data:${mimeType};base64,${base64Image}`,
-            },
-          ],
-        },
-      ],
+    const headers = {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+    };
+
+    if (process.env.OPENROUTER_SITE_URL) {
+      headers["HTTP-Referer"] = process.env.OPENROUTER_SITE_URL;
+    }
+
+    if (process.env.OPENROUTER_APP_NAME) {
+      headers["X-Title"] = process.env.OPENROUTER_APP_NAME;
+    }
+
+    const response = await fetch(`${OPENROUTER_API_URL}/chat/completions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt.trim(),
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Generate the Adaptive Card response for this UI.",
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${base64Image}`,
+                },
+              },
+            ],
+          },
+        ],
+        response_format: { type: "json_object" },
+      }),
     });
 
-    const outputText = response.output_text;
+    if (!response.ok) {
+      const errorPayload = await response
+        .json()
+        .catch(() => ({ error: { message: "Unknown error" } }));
+      throw new Error(
+        errorPayload?.error?.message ||
+          `Model request failed with status ${response.status}`
+      );
+    }
+
+    const completion = await response.json();
+
+    const outputText =
+      completion?.choices?.[0]?.message?.content?.trim?.() ?? "";
     if (!outputText) {
       throw new Error("No text output received from the model.");
     }
