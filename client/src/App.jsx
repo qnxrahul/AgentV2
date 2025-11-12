@@ -229,47 +229,88 @@ function App() {
             </div>
           </div>
 
-          <div className="result-card">
-            <div className="result-header">
-              <h2>Adaptive Card JSON</h2>
-              <div className="button-row">
+          <div className="result-card result-card--fancy">
+            <div className="fancy-card">
+              <div className="fancy-card-header">
+                <div className="fancy-card-title">
+                  <span className="fancy-card-dot" />
+                  <span>Adaptive Card JSON</span>
+                </div>
+                <span className="fancy-card-badge">Schema 1.5</span>
+              </div>
+              <div className="fancy-card-body">
+                <pre className="code-block">{cardJsonString}</pre>
+              </div>
+              <div className="fancy-card-actions">
                 <button
-                  className="secondary"
+                  className="ghost-button ghost-button--accent"
                   type="button"
                   onClick={handleDownloadJson}
                 >
                   Download JSON
                 </button>
                 <button
-                  className="secondary"
+                  className="ghost-button"
                   type="button"
                   onClick={() => handleCopy(cardJsonString)}
                 >
-                  Copy
+                  Copy Payload
                 </button>
               </div>
             </div>
-            <pre className="code-block">{cardJsonString}</pre>
           </div>
 
-          <div className="result-card">
-            <div className="result-header">
-              <h2>Clara AI Page Snippet</h2>
-              <button
-                className="secondary"
-                type="button"
-                onClick={() => handleCopy(cardPageString)}
-              >
-                Copy
-              </button>
+          <div className="result-card result-card--fancy">
+            <div className="fancy-card">
+              <div className="fancy-card-header">
+                <div className="fancy-card-title">
+                  <span className="fancy-card-dot fancy-card-dot--secondary" />
+                  <span>Clara AI Page Snippet</span>
+                </div>
+                <span className="fancy-card-badge fancy-card-badge--secondary">
+                  JSX
+                </span>
+              </div>
+              <div className="fancy-card-body">
+                <pre className="code-block">{cardPageString}</pre>
+              </div>
+              <div className="fancy-card-actions">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => handleCopy(cardPageString)}
+                >
+                  Copy Snippet
+                </button>
+              </div>
             </div>
-            <pre className="code-block">{cardPageString}</pre>
           </div>
 
           {result.notes && (
-            <div className="result-card">
-              <h2>Model Notes</h2>
-              <p>{result.notes}</p>
+            <div className="result-card result-card--fancy">
+              <div className="fancy-card">
+                <div className="fancy-card-header">
+                  <div className="fancy-card-title">
+                    <span className="fancy-card-dot fancy-card-dot--tertiary" />
+                    <span>Model Notes</span>
+                  </div>
+                  <span className="fancy-card-badge fancy-card-badge--tertiary">
+                    Insights
+                  </span>
+                </div>
+                <div className="fancy-card-body">
+                  <p className="fancy-card-text">{result.notes}</p>
+                </div>
+                <div className="fancy-card-actions">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => handleCopy(result.notes ?? "")}
+                  >
+                    Copy Notes
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </section>

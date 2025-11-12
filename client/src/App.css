@@ -181,6 +181,13 @@ header p {
   gap: 8px;
 }
 
+.result-card--fancy {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
 .card-preview {
   position: relative;
   min-height: 360px;
@@ -294,6 +301,178 @@ header p {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+.fancy-card {
+  position: relative;
+  border-radius: 24px;
+  padding: 26px 24px 24px;
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.88), rgba(15, 23, 42, 0.86));
+  box-shadow:
+    0 28px 55px rgba(15, 23, 42, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.18);
+  border: 1px solid rgba(226, 232, 240, 0.18);
+  overflow: hidden;
+}
+
+.fancy-card::before,
+.fancy-card::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.fancy-card::before {
+  width: 280px;
+  height: 280px;
+  top: -140px;
+  right: -110px;
+  background: rgba(129, 140, 248, 0.55);
+}
+
+.fancy-card::after {
+  width: 240px;
+  height: 240px;
+  bottom: -140px;
+  left: -120px;
+  background: rgba(56, 189, 248, 0.45);
+}
+
+.fancy-card-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.fancy-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.fancy-card-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #38bdf8 0%, #1d4ed8 100%);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.65);
+}
+
+.fancy-card-dot--secondary {
+  background: radial-gradient(circle, #a855f7 0%, #7c3aed 100%);
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.6);
+}
+
+.fancy-card-dot--tertiary {
+  background: radial-gradient(circle, #f97316 0%, #ea580c 100%);
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.55);
+}
+
+.fancy-card-badge {
+  position: relative;
+  z-index: 1;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(56, 189, 248, 0.18);
+  color: #bae6fd;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.fancy-card-badge--secondary {
+  background: rgba(196, 181, 253, 0.18);
+  color: #ddd6fe;
+  border-color: rgba(167, 139, 250, 0.35);
+}
+
+.fancy-card-badge--tertiary {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.fancy-card-body {
+  position: relative;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.68);
+  border-radius: 18px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.fancy-card-body .code-block {
+  background: rgba(15, 23, 42, 0.88);
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.fancy-card-text {
+  margin: 0;
+  color: #e2e8f0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.fancy-card-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 18px;
+}
+
+.ghost-button {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 0.65rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.65);
+  color: #f8fafc;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease,
+    box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.ghost-button:hover {
+  transform: translateY(-1px);
+  background: rgba(30, 41, 59, 0.75);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.35);
+  border-color: rgba(148, 163, 184, 0.55);
+}
+
+.ghost-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.ghost-button--accent {
+  background: linear-gradient(120deg, #38bdf8, #6366f1);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 12px 25px rgba(79, 70, 229, 0.45);
+}
+
+.ghost-button--accent:hover {
+  box-shadow: 0 16px 32px rgba(67, 56, 202, 0.55);
+}
+
 .code-block {
   margin: 0;
   padding: 16px;
@@ -358,6 +537,14 @@ header p {
 
   .button-row {
     flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .fancy-card {
+    padding: 22px 20px;
+  }
+
+  .fancy-card-actions {
     justify-content: flex-start;
   }
 }
