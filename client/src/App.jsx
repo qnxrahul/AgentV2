@@ -991,63 +991,28 @@ function App() {
       {error && <div className="alert error">{error}</div>}
       {previewError && <div className="alert warning">{previewError}</div>}
 
-      {result && (
-        <section className="results">
-            <div className="result-card">
-            <div className="result-header">
-              <h2>Adaptive Card Preview</h2>
-            </div>
-            <div className="card-preview">
-              <div className="card-preview-stage">
-                  <div className="card-fancy-shell card-fancy-shell--primary">
-                    <div className="card-fancy-glow" />
-                    <div className="card-host card-host--primary" ref={cardHostRef} />
-                  </div>
-              </div>
-            </div>
-          </div>
-
-            {cardDescriptors.length > 1 && (
-              <div className="result-card result-card--fancy">
-                <div className="fancy-card">
-                  <div className="fancy-card-header">
-                    <div className="fancy-card-title">
-                      <span className="fancy-card-dot fancy-card-dot--secondary" />
-                      <span>Individual Cards</span>
-                    </div>
-                    <span className="fancy-card-badge fancy-card-badge--secondary">
-                      {cardDescriptors.length} views
+        {result && (
+          <section className="results results--no-stage">
+            <div className="multi-card-grid multi-card-grid--standalone">
+              {cardDescriptors.map(({ card, theme, layoutType, summary }, index) => (
+                <div key={`card-descriptor-${index}`} className="multi-card-item multi-card-item--standalone">
+                  <AdaptiveCardRenderer payload={card} />
+                  <div className="card-summary card-summary--standalone">
+                    <span className="card-chip card-chip--style">
+                      {theme.charAt(0).toUpperCase() + theme.slice(1)}
                     </span>
-                  </div>
-                  <div className="fancy-card-body">
-                    <div className="multi-card-grid">
-                        {cardDescriptors.map(({ card, theme, layoutType, summary }, index) => (
-                        <div
-                          key={`card-descriptor-${index}`}
-                          className="multi-card-item"
-                        >
-                          <AdaptiveCardRenderer payload={card} />
-                            <div className="card-summary">
-                              <strong>Style:</strong>{" "}
-                              {theme.charAt(0).toUpperCase() + theme.slice(1)} ·{" "}
-                              <strong>Layout:</strong>{" "}
-                              {layoutType.charAt(0).toUpperCase() +
-                                layoutType.slice(1)}
-                              {summary && (
-                                <>
-                                  {" "}
-                                  · <strong>Primary:</strong> {summary}
-                                </>
-                              )}
-                            </div>
-                        </div>
-                      ))}
-                    </div>
+                    <span className="card-chip card-chip--layout">
+                      {layoutType.charAt(0).toUpperCase() + layoutType.slice(1)}
+                    </span>
+                    {summary && (
+                      <span className="card-chip card-chip--summary">
+                        {summary}
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
-
+              ))}
+            </div>
           <div className="result-card result-card--fancy">
             <div className="fancy-card">
               <div className="fancy-card-header">

@@ -147,6 +147,10 @@ header p {
   gap: 24px;
 }
 
+.results--no-stage {
+  grid-template-columns: 1fr;
+}
+
 @media (min-width: 980px) {
   .results {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -532,6 +536,11 @@ header p {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+.multi-card-grid--standalone {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
 .multi-card-item {
   background: rgba(248, 250, 252, 0.75);
   border-radius: 18px;
@@ -541,6 +550,25 @@ header p {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.multi-card-item--standalone {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.94));
+  border-radius: 22px;
+  padding: 18px;
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  box-shadow:
+    0 20px 45px rgba(15, 23, 42, 0.12),
+    0 4px 14px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.multi-card-item--standalone:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 26px 55px rgba(15, 23, 42, 0.14),
+    0 8px 18px rgba(15, 23, 42, 0.12);
 }
 
 .multi-card-item .card-host--inline {
@@ -564,13 +592,65 @@ header p {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.multi-card-item .card-summary strong {
-  color: #0f172a;
-  background: rgba(59, 130, 246, 0.12);
-  border-radius: 8px;
-  padding: 2px 8px;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+.card-summary--standalone {
+  margin-top: 4px;
+  align-self: flex-start;
+}
+
+.card-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
   font-weight: 600;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #1f2937;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.card-chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.card-chip--style {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #1d4ed8;
+}
+
+.card-chip--layout {
+  background: rgba(128, 90, 213, 0.12);
+  border-color: rgba(128, 90, 213, 0.25);
+  color: #5b21b6;
+}
+
+.card-chip--summary {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #047857;
+}
+
+.card-chip:hover {
+  transform: translateY(-1px);
+}
+
+.card-chip--summary::before {
+  background: #047857;
+}
+
+.card-chip--layout::before {
+  background: #5b21b6;
+}
+
+.card-chip--style::before {
+  background: #1d4ed8;
 }
 
 .code-block {
