@@ -40,6 +40,38 @@ If you cannot produce a valid Adaptive Card, respond with:
   { "error": "Reason why generation failed." }
 `.trim();
 
+const responseSchema = {
+  name: "adaptive_card_response",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      cardJson: {
+        description:
+          "Adaptive Card payload targeting schema version 1.5. Provide as a valid JSON object.",
+        type: "object",
+      },
+      cardPage: {
+        description:
+          "String containing JSX snippet that renders the Adaptive Card using the Adaptive Cards SDK.",
+        type: "string",
+      },
+      notes: {
+        description: "Optional implementation notes or assumptions.",
+        type: "string",
+      },
+      error: {
+        description: "Optional error message when generation fails.",
+        type: "string",
+      },
+    },
+    oneOf: [
+      { required: ["error"] },
+      { required: ["cardJson", "cardPage"] },
+    ],
+  },
+};
+
 const extractJsonObject = (text) => {
   if (!text) return null;
   const start = text.indexOf("{");
@@ -117,7 +149,10 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
             ],
           },
         ],
-        response_format: { type: "json_object" },
+        response_format: { type: "json_schema", json_schema: responseSchema },
+        temperature: Number.isFinite(Number(process.env.OPENROUTER_TEMPERATURE))
+          ? Number(process.env.OPENROUTER_TEMPERATURE)
+          : 0.1,
       }),
     });
 
@@ -195,9 +230,23 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
       });
     }
 
+    let resolvedCardJson = cardJson;
+    if (typeof resolvedCardJson === "string") {
+      try {
+        resolvedCardJson = JSON.parse(jsonrepair(resolvedCardJson));
+      } catch (jsonError) {
+        throw new Error(
+          `Model returned cardJson string that could not be parsed. Raw value: ${resolvedCardJson}`
+        );
+      }
+    }
+
+    const resolvedCardPage =
+      typeof cardPage === "string" ? cardPage : JSON.stringify(cardPage);
+
     res.json({
-      cardJson,
-      cardPage,
+      cardJson: resolvedCardJson,
+      cardPage: resolvedCardPage,
       notes: parsed.notes || null,
     });
   } catch (error) {
