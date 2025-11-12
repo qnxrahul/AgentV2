@@ -196,6 +196,8 @@ header p {
   overflow: hidden;
   background: linear-gradient(145deg, #eef2f6 0%, #d9e4f3 100%);
   border: 1px solid rgba(203, 213, 225, 0.6);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card-preview::before {
@@ -222,6 +224,9 @@ header p {
     0 4px 12px rgba(15, 23, 42, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.65);
   border: 1px solid rgba(203, 213, 225, 0.7);
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card-host {
@@ -234,6 +239,7 @@ header p {
   max-height: 560px;
   overflow-y: auto;
   scrollbar-width: thin;
+  width: 100%;
 }
 
 .card-host::-webkit-scrollbar {
@@ -246,9 +252,9 @@ header p {
 }
 
 .card-host .ac-adaptiveCard {
-  min-width: 520px;
-  max-width: 1024px;
   width: 100%;
+  max-width: 960px;
+  min-width: 320px;
   margin: 0 auto;
   border-radius: 16px;
   background: #ffffff;
@@ -276,9 +282,11 @@ header p {
   padding: 16px;
   background: transparent;
   border-radius: 16px;
+  width: 100%;
 }
 
 .card-host--inline .ac-adaptiveCard {
+  width: 100%;
   max-width: 720px;
   box-shadow:
     0 10px 24px rgba(15, 23, 42, 0.12),
@@ -291,11 +299,13 @@ header p {
   padding: 32px;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.16), rgba(30, 41, 59, 0.08));
   border: 1px solid rgba(148, 163, 184, 0.25);
-  overflow: visible;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
   transition: transform 0.35s ease, box-shadow 0.35s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card-fancy-shell--primary {
@@ -305,6 +315,7 @@ header p {
 
 .card-fancy-shell--inline {
   padding: 28px 24px;
+  width: 100%;
 }
 
 .card-fancy-shell:hover {
