@@ -158,7 +158,26 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
       }
     }
 
-    if (!parsed.cardJson || !parsed.cardPage) {
+    if (parsed.error) {
+      return res.status(502).json({
+        error: parsed.error,
+      });
+    }
+
+    const cardJson =
+      parsed.cardJson ??
+      parsed.card_json ??
+      parsed.cardJSON ??
+      parsed.card_payload ??
+      null;
+    const cardPage =
+      parsed.cardPage ??
+      parsed.card_page ??
+      parsed.cardSnippet ??
+      parsed.card_snippet ??
+      null;
+
+    if (!cardJson || !cardPage) {
       return res.status(502).json({
         error:
           "Model response missing required fields. Expected cardJson and cardPage.",
@@ -167,8 +186,8 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
     }
 
     res.json({
-      cardJson: parsed.cardJson,
-      cardPage: parsed.cardPage,
+      cardJson,
+      cardPage,
       notes: parsed.notes || null,
     });
   } catch (error) {
