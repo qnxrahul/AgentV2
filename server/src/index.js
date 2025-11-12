@@ -27,18 +27,35 @@ if (missingEnv.length > 0) {
 
 const systemPrompt = `
 You are an assistant that converts UI screenshots into Adaptive Card payloads for integration with Clara AI.
-- Examine the provided UI image and infer the layout, elements, and data bindings.
-- Return a strict JSON object with the following fields:
+You MUST respond with a single JSON object and nothing else—no markdown, no commentary, no code fences.
+The JSON object MUST include:
   {
-    "cardJson": <Adaptive Card JSON>,
-    "cardPage": <HTML or JSX snippet that renders the Adaptive Card using the Adaptive Cards SDK>,
-    "notes": <Optional implementation notes or assumptions as a string>
+    "cardJson": <Adaptive Card JSON object targeting schema version 1.5>,
+    "cardPage": <String containing JSX snippet that renders the Adaptive Card using Adaptive Cards SDK>,
+    "notes": <Optional string with implementation notes>
   }
-- The Adaptive Card must target schema version 1.5 and be valid JSON.
-- Use descriptive element ids and include sample data bindings.
-- Ensure "cardPage" contains a minimal, ready-to-use snippet for a React component that renders the card with the Adaptive Cards SDK.
-- Do not include markdown fences or commentary outside the JSON object.
-`;
+Use descriptive element ids and include sample data bindings. The "cardPage" value must be a valid JSON string (escape quotes/newlines as needed).
+If you cannot produce a valid Adaptive Card, respond with:
+  { "error": "Reason why generation failed." }
+`.trim();
+
+const extractJsonObject = (text) => {
+  if (!text) return null;
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  for (let i = start; i < text.length; i += 1) {
+    const char = text[i];
+    if (char === "{") depth += 1;
+    else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
+    }
+  }
+  return null;
+};
 
 const OPENROUTER_API_URL = process.env.OPENROUTER_API_URL || "https://openrouter.ai/api/v1";
 const OPENROUTER_MODEL =
@@ -82,10 +99,7 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
       body: JSON.stringify({
         model: OPENROUTER_MODEL,
         messages: [
-          {
-            role: "system",
-            content: systemPrompt.trim(),
-          },
+          { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
@@ -128,9 +142,20 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
     try {
       parsed = JSON.parse(outputText);
     } catch (parseError) {
-      throw new Error(
-        `Failed to parse model output as JSON. Raw output: ${outputText}`
-      );
+      const extracted = extractJsonObject(outputText);
+      if (extracted) {
+        try {
+          parsed = JSON.parse(extracted);
+        } catch (secondaryError) {
+          throw new Error(
+            `Failed to parse extracted JSON. Raw output: ${outputText}`
+          );
+        }
+      } else {
+        throw new Error(
+          `Failed to parse model output as JSON. Raw output: ${outputText}`
+        );
+      }
     }
 
     if (!parsed.cardJson || !parsed.cardPage) {
