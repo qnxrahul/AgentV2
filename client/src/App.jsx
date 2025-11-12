@@ -687,8 +687,26 @@ const augmentAdaptiveCardLayout = (rawPayload) => {
 
   adaptiveCard.body = [heroContainer, ...adaptiveCard.body];
 
-  return adaptiveCard;
+  return { card: adaptiveCard, descriptors };
 };
+
+function AdaptiveCardRenderer({ payload }) {
+  const hostRef = useRef(null);
+
+  useEffect(() => {
+    if (!hostRef.current || !payload) return;
+
+    const adaptiveCardInstance = new AdaptiveCard();
+    adaptiveCardInstance.hostConfig = new HostConfig(MICROSOFT_HOST_CONFIG);
+    adaptiveCardInstance.parse(ensureAdaptiveCardStructure(payload));
+    const rendered = adaptiveCardInstance.render();
+
+    hostRef.current.innerHTML = "";
+    hostRef.current.appendChild(rendered);
+  }, [payload]);
+
+  return <div className="card-host card-host--inline" ref={hostRef} />;
+}
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -697,6 +715,7 @@ function App() {
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [previewError, setPreviewError] = useState("");
+  const [cardDescriptors, setCardDescriptors] = useState([]);
   const cardHostRef = useRef(null);
 
   const isGenerating = status === "generating";
@@ -725,7 +744,9 @@ function App() {
         typeof result.cardJson === "string"
           ? JSON.parse(result.cardJson)
           : result.cardJson;
-      const normalizedPayload = augmentAdaptiveCardLayout(payload);
+      const { card: normalizedPayload, descriptors } =
+        augmentAdaptiveCardLayout(payload);
+      setCardDescriptors(descriptors);
       const adaptiveCard = new AdaptiveCard();
       adaptiveCard.hostConfig = new HostConfig(MICROSOFT_HOST_CONFIG);
       adaptiveCard.parse(normalizedPayload);
@@ -768,6 +789,7 @@ function App() {
     setStatus("generating");
     setResult(null);
     setPreviewError("");
+    setCardDescriptors([]);
 
     const formData = new FormData();
     formData.append("uiImage", selectedFile);
@@ -802,6 +824,7 @@ function App() {
     setStatus("idle");
     setError("");
     setPreviewError("");
+    setCardDescriptors([]);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl("");
@@ -903,7 +926,7 @@ function App() {
 
       {result && (
         <section className="results">
-          <div className="result-card">
+            <div className="result-card">
             <div className="result-header">
               <h2>Adaptive Card Preview</h2>
             </div>
@@ -913,6 +936,34 @@ function App() {
               </div>
             </div>
           </div>
+
+            {cardDescriptors.length > 1 && (
+              <div className="result-card result-card--fancy">
+                <div className="fancy-card">
+                  <div className="fancy-card-header">
+                    <div className="fancy-card-title">
+                      <span className="fancy-card-dot fancy-card-dot--secondary" />
+                      <span>Individual Cards</span>
+                    </div>
+                    <span className="fancy-card-badge fancy-card-badge--secondary">
+                      {cardDescriptors.length} views
+                    </span>
+                  </div>
+                  <div className="fancy-card-body">
+                    <div className="multi-card-grid">
+                      {cardDescriptors.map(({ card }, index) => (
+                        <div
+                          key={`card-descriptor-${index}`}
+                          className="multi-card-item"
+                        >
+                          <AdaptiveCardRenderer payload={card} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
           <div className="result-card result-card--fancy">
             <div className="fancy-card">

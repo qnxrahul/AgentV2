@@ -246,8 +246,9 @@ header p {
 }
 
 .card-host .ac-adaptiveCard {
-  min-width: 320px;
-  max-width: 420px;
+  min-width: 360px;
+  max-width: 640px;
+  width: 100%;
   margin: 0 auto;
   border-radius: 16px;
   background: #ffffff;
@@ -268,6 +269,20 @@ header p {
 .card-host .ac-input,
 .card-host .ac-actionSet button {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.card-host--inline {
+  max-height: none;
+  padding: 16px;
+  background: transparent;
+  border-radius: 16px;
+}
+
+.card-host--inline .ac-adaptiveCard {
+  max-width: 520px;
+  box-shadow:
+    0 10px 24px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
 .fancy-card {
@@ -441,6 +456,23 @@ header p {
   box-shadow: 0 16px 32px rgba(37, 99, 235, 0.45);
 }
 
+.multi-card-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.multi-card-item {
+  background: rgba(248, 250, 252, 0.75);
+  border-radius: 18px;
+  padding: 12px;
+  border: 1px solid rgba(203, 213, 225, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
 .code-block {
   margin: 0;
   padding: 16px;
@@ -514,5 +546,9 @@ header p {
 
   .fancy-card-actions {
     justify-content: flex-start;
+  }
+
+  .multi-card-grid {
+    grid-template-columns: 1fr;
   }
 }
