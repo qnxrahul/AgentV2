@@ -286,7 +286,7 @@ const extractSubtitleFromCard = (card, layoutType) => {
   return fallbackMessage[layoutType] || fallbackMessage.default;
 };
 
-const heroIconMap = {
+const LAYOUT_ICON_MAP = {
   multi: "🗂️",
   video: "🎬",
   audio: "🎧",
@@ -296,7 +296,7 @@ const heroIconMap = {
   default: "✨",
 };
 
-const heroStyleMap = {
+const LAYOUT_STYLE_MAP = {
   multi: "emphasis",
   video: "accent",
   audio: "accent",
@@ -315,33 +315,184 @@ const collectCardsFromPayload = (payload) => {
   return [ensureAdaptiveCardStructure(payload)];
 };
 
-const normalizeAdaptiveCardPayload = (payload) => {
-  const cards = collectCardsFromPayload(payload);
+const KEYWORD_THEME_RULES = [
+  {
+    theme: "danger",
+    keywords: [
+      "critical",
+      "failed",
+      "error",
+      "urgent",
+      "severe",
+      "sev 1",
+      "blocked",
+      "breach",
+      "incident",
+      "emergency",
+    ],
+  },
+  {
+    theme: "warning",
+    keywords: [
+      "warning",
+      "risk",
+      "pending",
+      "overdue",
+      "attention",
+      "escalation",
+      "issue",
+      "alert",
+      "caution",
+      "review",
+    ],
+  },
+  {
+    theme: "success",
+    keywords: [
+      "success",
+      "resolved",
+      "completed",
+      "approved",
+      "done",
+      "shipped",
+      "delivered",
+      "closed",
+      "pass",
+    ],
+  },
+  {
+    theme: "info",
+    keywords: ["info", "information", "details", "note", "update", "reminder"],
+  },
+];
 
-  if (cards.length <= 1) {
-    return cards[0];
+const THEME_CONFIG = {
+  danger: {
+    heroStyle: "attention",
+    heroIcon: "🚨",
+    badgeText: "Critical Status",
+    sectionStyle: "attention",
+  },
+  warning: {
+    heroStyle: "attention",
+    heroIcon: "⚠️",
+    badgeText: "Needs Attention",
+    sectionStyle: "attention",
+  },
+  success: {
+    heroStyle: "good",
+    heroIcon: "✅",
+    badgeText: "On Track",
+    sectionStyle: "good",
+  },
+  info: {
+    heroStyle: "accent",
+    heroIcon: "ℹ️",
+    badgeText: "Information",
+    sectionStyle: "default",
+  },
+  default: {
+    heroStyle: null,
+    heroIcon: null,
+    badgeText: null,
+    sectionStyle: null,
+  },
+};
+
+const extractAllTextFromCard = (card) => {
+  const textBlocks = extractTextBlocks(card);
+  const raw = textBlocks.map((block) => block.text || "");
+  if (typeof card.title === "string") raw.push(card.title);
+  if (typeof card.subtitle === "string") raw.push(card.subtitle);
+  if (typeof card.summary === "string") raw.push(card.summary);
+  if (typeof card.status === "string") raw.push(card.status);
+  if (typeof card.severity === "string") raw.push(card.severity);
+  if (typeof card.priority === "string") raw.push(card.priority);
+  return raw.join(" ").toLowerCase();
+};
+
+const determineCardTheme = (card) => {
+  const haystack = extractAllTextFromCard(card);
+  for (const rule of KEYWORD_THEME_RULES) {
+    if (rule.keywords.some((keyword) => haystack.includes(keyword))) {
+      return rule.theme;
+    }
+  }
+  return "default";
+};
+
+const mapCardsWithMetadata = (payload) => {
+  const cards = collectCardsFromPayload(payload);
+  return cards.map((card) => {
+    const layoutType = detectCardLayout(card);
+    const theme = determineCardTheme(card);
+    return { card, layoutType, theme };
+  });
+};
+
+const THEME_PRIORITY = ["danger", "warning", "success", "info", "default"];
+
+const determineAggregateTheme = (descriptors) => {
+  for (const theme of THEME_PRIORITY) {
+    if (descriptors.some((descriptor) => descriptor.theme === theme)) {
+      return theme;
+    }
+  }
+  return "default";
+};
+
+const themeToContainerStyle = (theme, index) => {
+  const config = THEME_CONFIG[theme];
+  if (config?.sectionStyle) {
+    return config.sectionStyle;
+  }
+  return index % 2 === 0 ? "default" : "emphasis";
+};
+
+const composeMultiCardLayout = (descriptors) => {
+  if (descriptors.length <= 1) {
+    return descriptors[0]?.card ?? {
+      $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+      type: "AdaptiveCard",
+      version: "1.5",
+      body: [],
+    };
   }
 
-  const sections = cards.map((card, index) => {
-    const items = Array.isArray(card.body) ? card.body : [];
-    const actions =
-      Array.isArray(card.actions) && card.actions.length > 0
-        ? [
-            {
-              type: "ActionSet",
-              actions: card.actions,
-            },
-          ]
-        : [];
+  const sections = descriptors.map(({ card, theme }, index) => {
+    const sectionItems = Array.isArray(card.body) ? [...card.body] : [];
+    if (Array.isArray(card.actions) && card.actions.length > 0) {
+      sectionItems.push({
+        type: "ActionSet",
+        spacing: "Medium",
+        actions: card.actions,
+      });
+    }
 
-    return {
+    const section = {
       type: "Container",
       id: `__cardSection_${index}`,
-      style: index % 2 === 0 ? "default" : "emphasis",
+      style: card.style || themeToContainerStyle(theme, index),
       spacing: index === 0 ? "Large" : "Medium",
-      bleed: true,
-      items: [...items, ...actions],
+      separator: index > 0,
+      bleed: typeof card.bleed === "boolean" ? card.bleed : true,
+      items: sectionItems,
     };
+
+    if (card.backgroundImage) {
+      section.backgroundImage = card.backgroundImage;
+    }
+    if (card.verticalContentAlignment) {
+      section.verticalContentAlignment = card.verticalContentAlignment;
+    }
+    if (card.minHeight) {
+      section.minHeight = card.minHeight;
+    }
+    if (card.selectAction) {
+      section.selectAction = card.selectAction;
+    }
+
+    return section;
   });
 
   return {
@@ -352,10 +503,26 @@ const normalizeAdaptiveCardPayload = (payload) => {
   };
 };
 
-const createHeroLayout = (layoutType, title, subtitle) => ({
+const prepareCardPresentation = (payload) => {
+  const descriptors = mapCardsWithMetadata(payload);
+  const normalized =
+    descriptors.length > 1
+      ? composeMultiCardLayout(descriptors)
+      : descriptors[0]?.card ??
+        ensureAdaptiveCardStructure({
+          $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+          type: "AdaptiveCard",
+          version: "1.5",
+          body: [],
+        });
+
+  return { descriptors, normalized };
+};
+
+const createHeroLayout = ({ style, icon, title, subtitle, badgeText }) => ({
   type: "Container",
   id: "__heroLayout",
-  style: heroStyleMap[layoutType] || heroStyleMap.default,
+  style: style || "default",
   bleed: true,
   spacing: "Large",
   items: [
@@ -369,7 +536,7 @@ const createHeroLayout = (layoutType, title, subtitle) => ({
           items: [
             {
               type: "TextBlock",
-              text: heroIconMap[layoutType] || heroIconMap.default,
+              text: icon || LAYOUT_ICON_MAP.default,
               size: "ExtraLarge",
             },
           ],
@@ -397,14 +564,31 @@ const createHeroLayout = (layoutType, title, subtitle) => ({
               : null,
           ].filter(Boolean),
         },
-      ],
+        badgeText
+          ? {
+              type: "Column",
+              width: "auto",
+              items: [
+                {
+                  type: "TextBlock",
+                  text: badgeText,
+                  wrap: true,
+                  weight: "Bolder",
+                  horizontalAlignment: "Right",
+                  spacing: "None",
+                  isSubtle: true,
+                },
+              ],
+            }
+          : null,
+      ].filter(Boolean),
     },
   ],
 });
 
 const augmentAdaptiveCardLayout = (rawPayload) => {
-  const sourceCards = collectCardsFromPayload(rawPayload);
-  const adaptiveCard = normalizeAdaptiveCardPayload(rawPayload);
+  const { descriptors, normalized } = prepareCardPresentation(rawPayload);
+  const adaptiveCard = normalized;
 
   if (!Array.isArray(adaptiveCard.body)) {
     adaptiveCard.body = [];
@@ -417,25 +601,58 @@ const augmentAdaptiveCardLayout = (rawPayload) => {
     return adaptiveCard;
   }
 
+  const aggregateTheme = determineAggregateTheme(descriptors);
+  const themeConfig = THEME_CONFIG[aggregateTheme] || THEME_CONFIG.default;
+
+  const heroLayoutType =
+    descriptors.length > 1
+      ? descriptors.find((descriptor) => descriptor.layoutType !== "default")
+          ?.layoutType || "multi"
+      : descriptors[0]?.layoutType || "default";
+
   const layoutType =
-    sourceCards.length > 1
-      ? sourceCards
-          .map((card) => detectCardLayout(card))
-          .find((type) => type !== "default") || "multi"
-      : detectCardLayout(sourceCards[0]);
+    descriptors.length > 1 ? "multi" : descriptors[0]?.layoutType || "default";
 
   const title =
-    sourceCards.length > 1
-      ? `${sourceCards.length} Adaptive Cards`
-      : extractTitleFromCard(sourceCards[0]);
+    descriptors.length > 1
+      ? `${descriptors.length} Adaptive Cards`
+      : extractTitleFromCard(descriptors[0]?.card ?? adaptiveCard);
 
-  const subtitle =
-    sourceCards.length > 1
-      ? extractSubtitleFromCard(sourceCards[0], layoutType) ||
-        "Multiple card views reconstructed from the uploaded UI."
-      : extractSubtitleFromCard(sourceCards[0], layoutType);
+  const subtitle = extractSubtitleFromCard(
+    descriptors[0]?.card ?? adaptiveCard,
+    layoutType
+  );
 
-  const heroContainer = createHeroLayout(layoutType, title, subtitle);
+  const heroIcon =
+    themeConfig.heroIcon ||
+    LAYOUT_ICON_MAP[heroLayoutType] ||
+    LAYOUT_ICON_MAP.default;
+
+  const heroStyle =
+    themeConfig.heroStyle ||
+    LAYOUT_STYLE_MAP[heroLayoutType] ||
+    LAYOUT_STYLE_MAP.default;
+
+  const badgeText =
+    themeConfig.badgeText ||
+    (layoutType === "multi"
+      ? "Multi-card Layout"
+      : {
+          video: "Video Layout",
+          audio: "Audio Layout",
+          media: "Media Layout",
+          form: "Interactive Form",
+          text: "Text Layout",
+          default: "Adaptive Card",
+        }[layoutType] || "Adaptive Card");
+
+  const heroContainer = createHeroLayout({
+    style: heroStyle,
+    icon: heroIcon,
+    title,
+    subtitle,
+    badgeText,
+  });
 
   adaptiveCard.body = [heroContainer, ...adaptiveCard.body];
 
