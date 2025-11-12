@@ -190,68 +190,38 @@ header p {
 
 .card-preview {
   position: relative;
-  min-height: 360px;
-  padding: 36px;
-  border-radius: 28px;
-  overflow: visible;
-  background: radial-gradient(
-      circle at top,
-      rgba(96, 165, 250, 0.25),
-      transparent 55%
-    ),
-    radial-gradient(
-      circle at bottom right,
-      rgba(129, 140, 248, 0.2),
-      transparent 60%
-    ),
-    #f8fafc;
+  min-height: 320px;
+  padding: 30px;
+  border-radius: 26px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #eef2f6 0%, #d9e4f3 100%);
+  border: 1px solid rgba(203, 213, 225, 0.6);
 }
 
-.card-preview-glow {
+.card-preview::before {
+  content: "";
   position: absolute;
-  inset: 12px;
-  border-radius: 24px;
-  background: conic-gradient(
-    from 120deg,
-    rgba(96, 165, 250, 0.5),
-    rgba(94, 234, 212, 0.45),
-    rgba(196, 181, 253, 0.5),
-    rgba(96, 165, 250, 0.5)
-  );
-  filter: blur(35px);
-  opacity: 0.8;
-  animation: hueShift 12s ease-in-out infinite;
+  inset: -60px;
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0.25) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.4;
 }
 
 .card-preview-stage {
   position: relative;
   z-index: 1;
-  border-radius: 24px;
-  padding: 28px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.45));
+  border-radius: 20px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.92);
   box-shadow:
-    0 24px 60px rgba(15, 23, 42, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1px rgba(148, 163, 184, 0.18);
-  border: 1px solid rgba(226, 232, 240, 0.2);
-  backdrop-filter: blur(18px) saturate(160%);
-  overflow: visible;
-}
-
-.card-preview-reflection {
-  position: absolute;
-  inset: 0;
-  border-radius: 24px;
-  background: linear-gradient(
-    210deg,
-    rgba(255, 255, 255, 0.35),
-    rgba(148, 163, 184, 0.08) 45%,
-    transparent 65%
-  );
-  pointer-events: none;
-  mix-blend-mode: screen;
-  opacity: 0.75;
-  animation: shimmer 9s ease-in-out infinite;
+    0 18px 38px rgba(15, 23, 42, 0.18),
+    0 4px 12px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(203, 213, 225, 0.7);
 }
 
 .card-host {
@@ -279,13 +249,12 @@ header p {
   min-width: 320px;
   max-width: 420px;
   margin: 0 auto;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.92));
+  border-radius: 16px;
+  background: #ffffff;
   box-shadow:
-    0 18px 45px rgba(15, 23, 42, 0.26),
-    0 4px 20px rgba(15, 23, 42, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  backdrop-filter: blur(6px);
+    0 12px 28px rgba(15, 23, 42, 0.1),
+    0 2px 8px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(229, 231, 235, 0.9);
 }
 
 .card-host .ac-container {
@@ -303,14 +272,13 @@ header p {
 
 .fancy-card {
   position: relative;
-  border-radius: 24px;
-  padding: 26px 24px 24px;
-  background: linear-gradient(160deg, rgba(30, 41, 59, 0.88), rgba(15, 23, 42, 0.86));
+  border-radius: 22px;
+  padding: 24px 22px 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(245, 248, 252, 0.92));
   box-shadow:
-    0 28px 55px rgba(15, 23, 42, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1px rgba(148, 163, 184, 0.18);
-  border: 1px solid rgba(226, 232, 240, 0.18);
+    0 18px 40px rgba(15, 23, 42, 0.12),
+    0 1px 3px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(203, 213, 225, 0.7);
   overflow: hidden;
 }
 
@@ -325,19 +293,19 @@ header p {
 }
 
 .fancy-card::before {
-  width: 280px;
-  height: 280px;
-  top: -140px;
-  right: -110px;
-  background: rgba(129, 140, 248, 0.55);
+  width: 240px;
+  height: 240px;
+  top: -120px;
+  right: -120px;
+  background: rgba(96, 165, 250, 0.35);
 }
 
 .fancy-card::after {
   width: 240px;
   height: 240px;
   bottom: -140px;
-  left: -120px;
-  background: rgba(56, 189, 248, 0.45);
+  left: -130px;
+  background: rgba(165, 180, 252, 0.3);
 }
 
 .fancy-card-header {
@@ -356,25 +324,25 @@ header p {
   gap: 12px;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #111827;
 }
 
 .fancy-card-dot {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: radial-gradient(circle, #38bdf8 0%, #1d4ed8 100%);
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.65);
+  background: radial-gradient(circle, #0b6ef5 0%, #0078d4 100%);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
 }
 
 .fancy-card-dot--secondary {
-  background: radial-gradient(circle, #a855f7 0%, #7c3aed 100%);
-  box-shadow: 0 0 18px rgba(168, 85, 247, 0.6);
+  background: radial-gradient(circle, #8b5cf6 0%, #6d28d9 100%);
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.35);
 }
 
 .fancy-card-dot--tertiary {
-  background: radial-gradient(circle, #f97316 0%, #ea580c 100%);
-  box-shadow: 0 0 18px rgba(249, 115, 22, 0.55);
+  background: radial-gradient(circle, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
 }
 
 .fancy-card-badge {
@@ -386,43 +354,43 @@ header p {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  background: rgba(56, 189, 248, 0.18);
-  color: #bae6fd;
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .fancy-card-badge--secondary {
-  background: rgba(196, 181, 253, 0.18);
-  color: #ddd6fe;
-  border-color: rgba(167, 139, 250, 0.35);
+  background: rgba(139, 92, 246, 0.12);
+  color: #5b21b6;
+  border-color: rgba(139, 92, 246, 0.2);
 }
 
 .fancy-card-badge--tertiary {
-  background: rgba(251, 191, 36, 0.18);
-  color: #fde68a;
-  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+  border-color: rgba(217, 119, 6, 0.2);
 }
 
 .fancy-card-body {
   position: relative;
   z-index: 1;
-  background: rgba(15, 23, 42, 0.68);
-  border-radius: 18px;
-  padding: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .fancy-card-body .code-block {
-  background: rgba(15, 23, 42, 0.88);
-  border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: #0f172a;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .fancy-card-text {
   margin: 0;
-  color: #e2e8f0;
+  color: #1f2937;
   line-height: 1.7;
   white-space: pre-wrap;
 }
@@ -439,12 +407,12 @@ header p {
 
 .ghost-button {
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.5);
   padding: 0.65rem 1.4rem;
   font-size: 0.95rem;
   font-weight: 600;
-  background: rgba(15, 23, 42, 0.65);
-  color: #f8fafc;
+  background: #f1f5f9;
+  color: #1f2937;
   cursor: pointer;
   transition: transform 0.18s ease, background 0.18s ease,
     box-shadow 0.18s ease, border-color 0.18s ease;
@@ -452,9 +420,9 @@ header p {
 
 .ghost-button:hover {
   transform: translateY(-1px);
-  background: rgba(30, 41, 59, 0.75);
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.35);
-  border-color: rgba(148, 163, 184, 0.55);
+  background: #e2e8f0;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+  border-color: rgba(148, 163, 184, 0.7);
 }
 
 .ghost-button:active {
@@ -463,14 +431,14 @@ header p {
 }
 
 .ghost-button--accent {
-  background: linear-gradient(120deg, #38bdf8, #6366f1);
-  border-color: transparent;
-  color: white;
-  box-shadow: 0 12px 25px rgba(79, 70, 229, 0.45);
+  background: linear-gradient(120deg, #4090ff, #2b6de5);
+  border-color: rgba(37, 99, 235, 0.4);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
 }
 
 .ghost-button--accent:hover {
-  box-shadow: 0 16px 32px rgba(67, 56, 202, 0.55);
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.45);
 }
 
 .code-block {
@@ -541,7 +509,7 @@ header p {
   }
 
   .fancy-card {
-    padding: 22px 20px;
+    padding: 22px 18px;
   }
 
   .fancy-card-actions {

@@ -1,9 +1,101 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AdaptiveCard } from "adaptivecards";
+import { AdaptiveCard, HostConfig } from "adaptivecards";
 import "adaptivecards/dist/adaptivecards.css";
 import "./App.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+const MICROSOFT_HOST_CONFIG = {
+  spacing: {
+    small: 4,
+    default: 8,
+    medium: 12,
+    large: 16,
+    extraLarge: 24,
+    padding: 16,
+  },
+  separator: {
+    lineThickness: 1,
+    lineColor: "#E6E6E6",
+  },
+  supportsInteractivity: true,
+  fontTypes: {
+    default: {
+      fontFamily: "Segoe UI, SegoeUI, \"Helvetica Neue\", Helvetica, Arial",
+      fontSizes: {
+        small: 10,
+        default: 12,
+        medium: 14,
+        large: 17,
+        extraLarge: 21,
+      },
+      fontWeights: {
+        lighter: 200,
+        default: 400,
+        bolder: 600,
+      },
+    },
+  },
+  containerStyles: {
+    default: {
+      backgroundColor: "#FFFFFF",
+      foregroundColors: {
+        default: { default: "#201F1E", subtle: "#605E5C" },
+        accent: { default: "#0078D4", subtle: "#005A9E" },
+        attention: { default: "#D13438", subtle: "#A80000" },
+        good: { default: "#107C10", subtle: "#0B5A0B" },
+        warning: { default: "#FBBC05", subtle: "#8E6400" },
+      },
+    },
+    emphasis: {
+      backgroundColor: "#F3F2F1",
+      foregroundColors: {
+        default: { default: "#323130", subtle: "#605E5C" },
+        accent: { default: "#0078D4", subtle: "#005A9E" },
+        attention: { default: "#D13438", subtle: "#A80000" },
+        good: { default: "#107C10", subtle: "#0B5A0B" },
+        warning: { default: "#FBBC05", subtle: "#8E6400" },
+      },
+    },
+  },
+  imageSizes: {
+    small: 40,
+    medium: 80,
+    large: 120,
+  },
+  actions: {
+    maxActions: 5,
+    spacing: "default",
+    buttonSpacing: 8,
+    showCard: {
+      actionMode: "inline",
+      inlineTopMargin: 16,
+    },
+    actionsOrientation: "horizontal",
+    actionAlignment: "stretch",
+  },
+  adaptiveCard: {
+    allowCustomStyle: false,
+  },
+  factSet: {
+    title: {
+      color: "default",
+      size: "default",
+      isSubtle: false,
+      weight: "bolder",
+      wrap: true,
+      maxWidth: 150,
+    },
+    value: {
+      color: "default",
+      size: "default",
+      isSubtle: false,
+      weight: "default",
+      wrap: true,
+    },
+    spacing: 12,
+  },
+};
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -41,6 +133,7 @@ function App() {
           ? JSON.parse(result.cardJson)
           : result.cardJson;
       const adaptiveCard = new AdaptiveCard();
+      adaptiveCard.hostConfig = new HostConfig(MICROSOFT_HOST_CONFIG);
       adaptiveCard.parse(payload);
       const renderedCard = adaptiveCard.render();
       cardHostRef.current.appendChild(renderedCard);
@@ -221,9 +314,7 @@ function App() {
               <h2>Adaptive Card Preview</h2>
             </div>
             <div className="card-preview">
-              <div className="card-preview-glow" />
               <div className="card-preview-stage">
-                <div className="card-preview-reflection" />
                 <div className="card-host" ref={cardHostRef} />
               </div>
             </div>
