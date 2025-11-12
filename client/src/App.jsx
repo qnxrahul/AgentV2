@@ -411,21 +411,21 @@ const extractAllTextFromCard = (card) => {
   return raw.join(" ").toLowerCase();
 };
 
-const determineCardTheme = (card) => {
+const determineCardTheme = (card, descriptorIndex = 0) => {
   const haystack = extractAllTextFromCard(card);
   for (const rule of KEYWORD_THEME_RULES) {
     if (rule.keywords.some((keyword) => haystack.includes(keyword))) {
       return rule.theme;
     }
   }
-  return "default";
+  return descriptorIndex % 2 === 0 ? "info" : "default";
 };
 
 const mapCardsWithMetadata = (payload) => {
   const cards = collectCardsFromPayload(payload);
-  return cards.map((card) => {
+  return cards.map((card, index) => {
     const layoutType = detectCardLayout(card);
-    const theme = determineCardTheme(card);
+    const theme = determineCardTheme(card, index);
     return { card, layoutType, theme };
   });
 };
@@ -442,11 +442,14 @@ const determineAggregateTheme = (descriptors) => {
 };
 
 const themeToContainerStyle = (theme, index) => {
+  if (index % 2 === 0) {
+    return "emphasis";
+  }
   const config = THEME_CONFIG[theme];
   if (config?.sectionStyle) {
     return config.sectionStyle;
   }
-  return index % 2 === 0 ? "default" : "emphasis";
+  return "default";
 };
 
 const composeMultiCardLayout = (descriptors) => {
@@ -459,26 +462,35 @@ const composeMultiCardLayout = (descriptors) => {
     };
   }
 
-  const sectionElementsFromCard = (card) => {
+  const unwrapCardAsSection = (card) => {
     if (!card || typeof card !== "object") {
-      return [];
+      return null;
     }
 
-    const items = [];
+    if (card.type === "Container") {
+      return card;
+    }
+
+    if (card.type === "ColumnSet" || card.type === "Column") {
+      return {
+        type: "Container",
+        style: card.style,
+        items: [card],
+      };
+    }
 
     if (card.type && card.type !== "AdaptiveCard") {
-      items.push(card);
-      return items;
+      return {
+        type: "Container",
+        style: card.style,
+        items: [card],
+      };
     }
 
-    if (Array.isArray(card.body)) {
-      items.push(...card.body);
-    }
-
+    const items = Array.isArray(card.body) ? [...card.body] : [];
     if (Array.isArray(card.items)) {
       items.push(...card.items);
     }
-
     if (Array.isArray(card.columns)) {
       items.push({
         type: "ColumnSet",
@@ -486,29 +498,35 @@ const composeMultiCardLayout = (descriptors) => {
       });
     }
 
-    return items;
+    const actions =
+      Array.isArray(card.actions) && card.actions.length > 0
+        ? [
+            {
+              type: "ActionSet",
+              spacing: "Medium",
+              actions: card.actions,
+            },
+          ]
+        : [];
+
+    return {
+      type: "Container",
+      style: card.style,
+      items: [...items, ...actions],
+    };
   };
 
   const sections = descriptors.map(({ card, theme }, index) => {
-    const sectionItems = sectionElementsFromCard(card);
-
-    const section = {
+    const section = unwrapCardAsSection(card) || {
       type: "Container",
-      id: `__cardSection_${index}`,
-      style: card.style || themeToContainerStyle(theme, index),
-      spacing: index === 0 ? "Large" : "Medium",
-      separator: index > 0,
-      bleed: typeof card.bleed === "boolean" ? card.bleed : true,
-      items: sectionItems,
+      items: [],
     };
 
-    if (Array.isArray(card.actions) && card.actions.length > 0) {
-      section.items.push({
-        type: "ActionSet",
-        spacing: "Medium",
-        actions: card.actions,
-      });
-    }
+    section.id = `__cardSection_${index}`;
+    section.style = section.style || card.style || themeToContainerStyle(theme, index);
+    section.spacing = index === 0 ? "Large" : "Medium";
+    section.separator = index > 0;
+    section.bleed = typeof card.bleed === "boolean" ? card.bleed : true;
 
     if (card.backgroundImage) {
       section.backgroundImage = card.backgroundImage;
@@ -951,12 +969,19 @@ function App() {
                   </div>
                   <div className="fancy-card-body">
                     <div className="multi-card-grid">
-                      {cardDescriptors.map(({ card }, index) => (
+                        {cardDescriptors.map(({ card, theme, layoutType }, index) => (
                         <div
                           key={`card-descriptor-${index}`}
                           className="multi-card-item"
                         >
                           <AdaptiveCardRenderer payload={card} />
+                            <div className="card-summary">
+                              <strong>Style:</strong>{" "}
+                              {theme.charAt(0).toUpperCase() + theme.slice(1)} ·{" "}
+                              <strong>Layout:</strong>{" "}
+                              {layoutType.charAt(0).toUpperCase() +
+                                layoutType.slice(1)}
+                            </div>
                         </div>
                       ))}
                     </div>
