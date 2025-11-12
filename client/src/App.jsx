@@ -769,25 +769,43 @@ const augmentAdaptiveCardLayout = (rawPayload) => {
   return { card: adaptiveCard, descriptors };
 };
 
-function AdaptiveCardRenderer({ payload }) {
+function AdaptiveCardRenderer({ payload, variant = "inline" }) {
   const hostRef = useRef(null);
 
   useEffect(() => {
     if (!hostRef.current || !payload) return;
 
-    const adaptiveCardInstance = new AdaptiveCard();
-    adaptiveCardInstance.hostConfig = new HostConfig(MICROSOFT_HOST_CONFIG);
-    adaptiveCardInstance.parse(ensureAdaptiveCardStructure(payload));
-    const rendered = adaptiveCardInstance.render();
+    try {
+      const adaptiveCardInstance = new AdaptiveCard();
+      adaptiveCardInstance.hostConfig = new HostConfig(MICROSOFT_HOST_CONFIG);
+      adaptiveCardInstance.parse(ensureAdaptiveCardStructure(payload));
+      const rendered = adaptiveCardInstance.render();
 
-    hostRef.current.innerHTML = "";
-    hostRef.current.appendChild(rendered);
+      hostRef.current.innerHTML = "";
+      hostRef.current.appendChild(rendered);
+    } catch (err) {
+      hostRef.current.innerHTML = `<div class="card-render-error">Unable to render Adaptive Card${
+        err instanceof Error ? `: ${err.message}` : ""
+      }</div>`;
+    }
   }, [payload]);
 
+  const shellClassNames = [
+    "card-fancy-shell",
+    variant === "primary"
+      ? "card-fancy-shell--primary"
+      : "card-fancy-shell--inline",
+  ].join(" ");
+
+  const hostClassNames = [
+    "card-host",
+    variant === "primary" ? "card-host--primary" : "card-host--inline",
+  ].join(" ");
+
   return (
-    <div className="card-fancy-shell card-fancy-shell--inline">
+    <div className={shellClassNames}>
       <div className="card-fancy-glow" />
-      <div className="card-host card-host--inline" ref={hostRef} />
+      <div className={hostClassNames} ref={hostRef} />
     </div>
   );
 }
@@ -800,7 +818,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [previewError, setPreviewError] = useState("");
   const [cardDescriptors, setCardDescriptors] = useState([]);
-  const cardHostRef = useRef(null);
+  const [normalizedCard, setNormalizedCard] = useState(null);
 
   const isGenerating = status === "generating";
 
@@ -813,13 +831,11 @@ function App() {
   }, [previewUrl]);
 
   useEffect(() => {
-    if (!cardHostRef.current) {
-      return;
-    }
-    cardHostRef.current.innerHTML = "";
     setPreviewError("");
 
     if (!result?.cardJson) {
+      setCardDescriptors([]);
+      setNormalizedCard(null);
       return;
     }
 
@@ -830,13 +846,11 @@ function App() {
           : result.cardJson;
       const { card: normalizedPayload, descriptors } =
         augmentAdaptiveCardLayout(payload);
+      setNormalizedCard(normalizedPayload);
       setCardDescriptors(descriptors);
-      const adaptiveCard = new AdaptiveCard();
-      adaptiveCard.hostConfig = new HostConfig(MICROSOFT_HOST_CONFIG);
-      adaptiveCard.parse(normalizedPayload);
-      const renderedCard = adaptiveCard.render();
-      cardHostRef.current.appendChild(renderedCard);
     } catch (err) {
+      setNormalizedCard(null);
+      setCardDescriptors([]);
       setPreviewError(
         err instanceof Error ? err.message : "Failed to render Adaptive Card."
       );
@@ -874,6 +888,7 @@ function App() {
     setResult(null);
     setPreviewError("");
     setCardDescriptors([]);
+    setNormalizedCard(null);
 
     const formData = new FormData();
     formData.append("uiImage", selectedFile);
@@ -909,6 +924,7 @@ function App() {
     setError("");
     setPreviewError("");
     setCardDescriptors([]);
+    setNormalizedCard(null);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl("");
@@ -960,6 +976,23 @@ function App() {
 
   const cardPageString = useMemo(() => result?.cardPage ?? "", [result]);
 
+  const aggregateStats = useMemo(() => {
+    if (!cardDescriptors.length) {
+      return null;
+    }
+    return cardDescriptors.reduce(
+      (acc, descriptor) => {
+        acc.cards += 1;
+        acc.elements += descriptor.elementCount;
+        acc.actions += descriptor.actionCount;
+        acc.inputs += descriptor.inputCount;
+        acc.media += descriptor.hasMedia ? 1 : 0;
+        return acc;
+      },
+      { cards: 0, elements: 0, actions: 0, inputs: 0, media: 0 }
+    );
+  }, [cardDescriptors]);
+
   return (
     <div className="app">
       <header>
@@ -1010,6 +1043,47 @@ function App() {
 
         {result && (
           <section className="results results--no-stage">
+            {normalizedCard && (
+              <div className="focus-card">
+                <div className="focus-card-header">
+                  <div>
+                    <h2>Adaptive Card Overview</h2>
+                    <p>Composite card reconstructed from the uploaded UI.</p>
+                  </div>
+                  {aggregateStats && (
+                    <div className="focus-card-badges">
+                      <span className="focus-chip">
+                        {aggregateStats.cards} Cards
+                      </span>
+                      <span className="focus-chip focus-chip--muted">
+                        {aggregateStats.elements} Elements
+                      </span>
+                      <span className="focus-chip focus-chip--muted">
+                        {aggregateStats.actions} Actions
+                      </span>
+                      {aggregateStats.inputs > 0 && (
+                        <span className="focus-chip focus-chip--muted">
+                          {aggregateStats.inputs} Inputs
+                        </span>
+                      )}
+                      {aggregateStats.media > 0 && (
+                        <span className="focus-chip">
+                          {aggregateStats.media} Media Blocks
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <AdaptiveCardRenderer payload={normalizedCard} variant="primary" />
+                {aggregateStats && (
+                  <div className="focus-card-meta">
+                    <span className="focus-chip focus-chip--muted">
+                      Generated with adaptive layout heuristics
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="multi-card-grid multi-card-grid--standalone">
               {cardDescriptors.map(
                 ({

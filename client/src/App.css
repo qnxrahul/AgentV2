@@ -151,6 +151,82 @@ header p {
   grid-template-columns: 1fr;
 }
 
+.focus-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(241, 245, 249, 0.95));
+  border-radius: 28px;
+  padding: 28px;
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  box-shadow:
+    0 28px 58px rgba(15, 23, 42, 0.18),
+    0 12px 24px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.focus-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.focus-card-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #111827;
+}
+
+.focus-card-header p {
+  margin: 4px 0 0;
+  color: #475467;
+}
+
+.focus-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.focus-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.focus-chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1d4ed8;
+}
+
+.focus-chip--muted {
+  background: rgba(148, 163, 184, 0.16);
+  color: #334155;
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.focus-chip--muted::before {
+  background: #475569;
+}
+
+.focus-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
 @media (min-width: 980px) {
   .results {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -239,11 +315,9 @@ header p {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow: hidden;
-  max-height: 560px;
-  overflow-y: auto;
   scrollbar-width: thin;
   width: 100%;
+  overflow: visible;
 }
 
 .card-host::-webkit-scrollbar {
@@ -315,6 +389,11 @@ header p {
 .card-fancy-shell--primary {
   padding: 42px 36px;
   backdrop-filter: blur(10px);
+}
+
+.card-host--primary {
+  width: 100%;
+  padding: 0;
 }
 
 .card-fancy-shell--inline {
@@ -683,6 +762,18 @@ header p {
   background: #4338ca;
 }
 
+.card-render-error {
+  width: 100%;
+  padding: 24px;
+  border-radius: 16px;
+  background: rgba(254, 226, 226, 0.7);
+  border: 1px solid rgba(248, 113, 113, 0.6);
+  color: #991b1b;
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
 .code-block {
   margin: 0;
   padding: 16px;
@@ -737,7 +828,8 @@ header p {
   }
 
   .card-host .ac-adaptiveCard {
-    min-width: 320px;
+    width: 100%;
+    min-width: 0;
   }
 
   header h1 {
@@ -764,5 +856,13 @@ header p {
 
   .multi-card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .focus-card {
+    padding: 20px;
+  }
+
+  .focus-card-badges {
+    gap: 6px;
   }
 }
