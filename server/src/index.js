@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const dotenv = require("dotenv");
+const { jsonrepair } = require("jsonrepair");
 
 dotenv.config();
 
@@ -139,21 +140,30 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
     }
 
     let parsed;
-    try {
-      parsed = JSON.parse(outputText);
-    } catch (parseError) {
-      const extracted = extractJsonObject(outputText);
-      if (extracted) {
-        try {
-          parsed = JSON.parse(extracted);
-        } catch (secondaryError) {
-          throw new Error(
-            `Failed to parse extracted JSON. Raw output: ${outputText}`
-          );
-        }
-      } else {
+    const attemptParse = (text) => {
+      if (!text) return null;
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        return null;
+      }
+    };
+
+    parsed = attemptParse(outputText);
+
+    let extracted;
+    if (!parsed) {
+      extracted = extractJsonObject(outputText);
+      parsed = attemptParse(extracted);
+    }
+
+    if (!parsed) {
+      const repairSource = extracted || outputText;
+      try {
+        parsed = JSON.parse(jsonrepair(repairSource));
+      } catch (repairError) {
         throw new Error(
-          `Failed to parse model output as JSON. Raw output: ${outputText}`
+          `Failed to parse model output as JSON even after repair. Raw output: ${outputText}`
         );
       }
     }
