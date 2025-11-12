@@ -220,7 +220,13 @@ function App() {
             <div className="result-header">
               <h2>Adaptive Card Preview</h2>
             </div>
-            <div className="card-preview" ref={cardHostRef} />
+            <div className="card-preview">
+              <div className="card-preview-glow" />
+              <div className="card-preview-stage">
+                <div className="card-preview-reflection" />
+                <div className="card-host" ref={cardHostRef} />
+              </div>
+            </div>
           </div>
 
           <div className="result-card">
