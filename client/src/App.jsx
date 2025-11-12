@@ -421,12 +421,56 @@ const determineCardTheme = (card, descriptorIndex = 0) => {
   return descriptorIndex % 2 === 0 ? "info" : "default";
 };
 
+const splitAdaptiveCardBody = (card) => {
+  if (!card || typeof card !== "object") return [];
+  if (card.type !== "AdaptiveCard") return [card];
+
+  const bodyElements = Array.isArray(card.body) ? card.body : [];
+
+  if (bodyElements.length <= 1) {
+    return [card];
+  }
+
+  return bodyElements.map((element, index) => {
+    const clonedElement = cloneCardPayload(element);
+    const baseClone = cloneCardPayload(card);
+    const splitCard = ensureAdaptiveCardStructure({
+      ...baseClone,
+      body: [clonedElement],
+      actions: [],
+    });
+    splitCard.id = `${card.id || "card"}__section_${index}`;
+    return splitCard;
+  });
+};
+
+const extractPrimaryText = (card) => {
+  const textBlocks = extractTextBlocks(card);
+  if (textBlocks.length > 0) {
+    return textBlocks[0].text?.trim() || "";
+  }
+  if (typeof card.title === "string" && card.title.trim()) {
+    return card.title.trim();
+  }
+  if (typeof card.subtitle === "string" && card.subtitle.trim()) {
+    return card.subtitle.trim();
+  }
+  if (typeof card.summary === "string" && card.summary.trim()) {
+    return card.summary.trim();
+  }
+  return "";
+};
+
 const mapCardsWithMetadata = (payload) => {
-  const cards = collectCardsFromPayload(payload);
+  const cards = collectCardsFromPayload(payload).flatMap((card) =>
+    splitAdaptiveCardBody(card)
+  );
+
   return cards.map((card, index) => {
     const layoutType = detectCardLayout(card);
     const theme = determineCardTheme(card, index);
-    return { card, layoutType, theme };
+    const summary = extractPrimaryText(card);
+    return { card, layoutType, theme, summary };
   });
 };
 
@@ -969,7 +1013,7 @@ function App() {
                   </div>
                   <div className="fancy-card-body">
                     <div className="multi-card-grid">
-                        {cardDescriptors.map(({ card, theme, layoutType }, index) => (
+                        {cardDescriptors.map(({ card, theme, layoutType, summary }, index) => (
                         <div
                           key={`card-descriptor-${index}`}
                           className="multi-card-item"
@@ -981,6 +1025,12 @@ function App() {
                               <strong>Layout:</strong>{" "}
                               {layoutType.charAt(0).toUpperCase() +
                                 layoutType.slice(1)}
+                              {summary && (
+                                <>
+                                  {" "}
+                                  · <strong>Primary:</strong> {summary}
+                                </>
+                              )}
                             </div>
                         </div>
                       ))}
