@@ -35,6 +35,22 @@ const MICROSOFT_HOST_CONFIG = {
         bolder: 600,
       },
     },
+    monospace: {
+      fontFamily:
+        "\"Cascadia Mono\", \"Segoe UI Mono\", \"SFMono-Regular\", Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      fontSizes: {
+        small: 10,
+        default: 12,
+        medium: 14,
+        large: 17,
+        extraLarge: 21,
+      },
+      fontWeights: {
+        lighter: 200,
+        default: 400,
+        bolder: 600,
+      },
+    },
   },
   containerStyles: {
     default: {
@@ -97,6 +113,270 @@ const MICROSOFT_HOST_CONFIG = {
   },
 };
 
+const cloneCardPayload = (payload) => {
+  try {
+    return JSON.parse(JSON.stringify(payload));
+  } catch (error) {
+    console.warn("Failed to clone Adaptive Card payload", error);
+    return payload;
+  }
+};
+
+const ensureAdaptiveCardStructure = (rawPayload) => {
+  const base = cloneCardPayload(rawPayload);
+  if (!base || typeof base !== "object") {
+    return {
+      $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+      type: "AdaptiveCard",
+      version: "1.5",
+      body: [],
+      actions: [],
+    };
+  }
+
+  if (base.type === "AdaptiveCard") {
+    if (!Array.isArray(base.body)) {
+      base.body = [];
+    }
+    if (base.actions && !Array.isArray(base.actions)) {
+      base.actions = [];
+    }
+    return base;
+  }
+
+  const fallbackBody = Array.isArray(base.body)
+    ? base.body
+    : Array.isArray(base.items)
+      ? base.items
+      : [];
+
+  return {
+    $schema:
+      typeof base.$schema === "string"
+        ? base.$schema
+        : "http://adaptivecards.io/schemas/adaptive-card.json",
+    type: "AdaptiveCard",
+    version: base.version || "1.5",
+    body: fallbackBody,
+    actions: Array.isArray(base.actions) ? base.actions : [],
+  };
+};
+
+const flattenAdaptiveCardElements = (node, acc = []) => {
+  if (!node) return acc;
+  if (Array.isArray(node)) {
+    node.forEach((item) => flattenAdaptiveCardElements(item, acc));
+    return acc;
+  }
+  if (typeof node !== "object") return acc;
+
+  if (node.type) {
+    acc.push(node);
+  }
+
+  if (Array.isArray(node.body)) {
+    flattenAdaptiveCardElements(node.body, acc);
+  }
+  if (Array.isArray(node.items)) {
+    flattenAdaptiveCardElements(node.items, acc);
+  }
+  if (Array.isArray(node.columns)) {
+    node.columns.forEach((col) =>
+      flattenAdaptiveCardElements(col.items || col.body, acc)
+    );
+  }
+  if (Array.isArray(node.rows)) {
+    flattenAdaptiveCardElements(node.rows, acc);
+  }
+  if (Array.isArray(node.actions)) {
+    flattenAdaptiveCardElements(node.actions, acc);
+  }
+  if (Array.isArray(node.cards)) {
+    flattenAdaptiveCardElements(node.cards, acc);
+  }
+
+  return acc;
+};
+
+const detectCardLayout = (card) => {
+  const elements = flattenAdaptiveCardElements(card.body);
+
+  const hasMediaElement = elements.some((el) => el.type === "Media");
+  const hasVideo = elements.some(
+    (el) =>
+      el.type === "Media" &&
+      Array.isArray(el.sources) &&
+      el.sources.some((src) =>
+        typeof src.mimeType === "string"
+          ? src.mimeType.startsWith("video")
+          : false
+      )
+  );
+  const hasAudio = elements.some(
+    (el) =>
+      el.type === "Media" &&
+      Array.isArray(el.sources) &&
+      el.sources.some((src) =>
+        typeof src.mimeType === "string"
+          ? src.mimeType.startsWith("audio")
+          : false
+      )
+  );
+  const hasInputs = elements.some(
+    (el) => typeof el.type === "string" && el.type.startsWith("Input.")
+  );
+  const textOnly =
+    elements.length > 0 &&
+    elements.every((el) =>
+      ["TextBlock", "RichTextBlock"].includes(el.type || "")
+    );
+
+  if (hasVideo) return "video";
+  if (hasAudio) return "audio";
+  if (hasMediaElement) return "media";
+  if (hasInputs) return "form";
+  if (textOnly) return "text";
+  return "default";
+};
+
+const extractTextBlocks = (card) => {
+  const elements = flattenAdaptiveCardElements(card.body);
+  return elements.filter((el) => el.type === "TextBlock" && el.text);
+};
+
+const extractTitleFromCard = (card) => {
+  if (typeof card.title === "string" && card.title.trim()) {
+    return card.title.trim();
+  }
+
+  const textBlocks = extractTextBlocks(card);
+  const priorityBlock =
+    textBlocks.find(
+      (block) =>
+        ["ExtraLarge", "Large"].includes(block.size || "") ||
+        block.weight === "Bolder"
+    ) || textBlocks[0];
+
+  return priorityBlock?.text || "Generated Adaptive Card";
+};
+
+const extractSubtitleFromCard = (card, layoutType) => {
+  if (typeof card.subtitle === "string" && card.subtitle.trim()) {
+    return card.subtitle.trim();
+  }
+  if (typeof card.summary === "string" && card.summary.trim()) {
+    return card.summary.trim();
+  }
+
+  const textBlocks = extractTextBlocks(card);
+  if (textBlocks.length > 1) {
+    return textBlocks[1].text;
+  }
+
+  const fallbackMessage = {
+    video: "Rich media playback experience.",
+    audio: "Stream and review audio content.",
+    media: "Interactive media presentation.",
+    form: "Collect responses with interactive inputs.",
+    text: "Structured textual content.",
+    default: "Adaptive Card generated from the uploaded UI.",
+  };
+
+  return fallbackMessage[layoutType] || fallbackMessage.default;
+};
+
+const heroIconMap = {
+  video: "🎬",
+  audio: "🎧",
+  media: "🖼️",
+  form: "📝",
+  text: "📰",
+  default: "✨",
+};
+
+const heroStyleMap = {
+  video: "accent",
+  audio: "accent",
+  media: "accent",
+  form: "emphasis",
+  text: "default",
+  default: "default",
+};
+
+const createHeroLayout = (layoutType, title, subtitle) => ({
+  type: "Container",
+  id: "__heroLayout",
+  style: heroStyleMap[layoutType] || heroStyleMap.default,
+  bleed: true,
+  spacing: "Large",
+  items: [
+    {
+      type: "ColumnSet",
+      columns: [
+        {
+          type: "Column",
+          width: "auto",
+          verticalContentAlignment: "Center",
+          items: [
+            {
+              type: "TextBlock",
+              text: heroIconMap[layoutType] || heroIconMap.default,
+              size: "ExtraLarge",
+            },
+          ],
+        },
+        {
+          type: "Column",
+          width: "stretch",
+          items: [
+            {
+              type: "TextBlock",
+              text: title,
+              wrap: true,
+              size: "Large",
+              weight: "Bolder",
+              spacing: "None",
+            },
+            subtitle
+              ? {
+                  type: "TextBlock",
+                  text: subtitle,
+                  wrap: true,
+                  spacing: "Small",
+                  isSubtle: true,
+                }
+              : null,
+          ].filter(Boolean),
+        },
+      ],
+    },
+  ],
+});
+
+const augmentAdaptiveCardLayout = (rawPayload) => {
+  const adaptiveCard = ensureAdaptiveCardStructure(rawPayload);
+
+  if (!Array.isArray(adaptiveCard.body)) {
+    adaptiveCard.body = [];
+  }
+
+  const alreadyHasHero = adaptiveCard.body.some(
+    (item) => item?.id === "__heroLayout"
+  );
+  if (alreadyHasHero) {
+    return adaptiveCard;
+  }
+
+  const layoutType = detectCardLayout(adaptiveCard);
+  const title = extractTitleFromCard(adaptiveCard);
+  const subtitle = extractSubtitleFromCard(adaptiveCard, layoutType);
+  const heroContainer = createHeroLayout(layoutType, title, subtitle);
+
+  adaptiveCard.body = [heroContainer, ...adaptiveCard.body];
+
+  return adaptiveCard;
+};
+
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -132,9 +412,10 @@ function App() {
         typeof result.cardJson === "string"
           ? JSON.parse(result.cardJson)
           : result.cardJson;
+      const normalizedPayload = augmentAdaptiveCardLayout(payload);
       const adaptiveCard = new AdaptiveCard();
       adaptiveCard.hostConfig = new HostConfig(MICROSOFT_HOST_CONFIG);
-      adaptiveCard.parse(payload);
+      adaptiveCard.parse(normalizedPayload);
       const renderedCard = adaptiveCard.render();
       cardHostRef.current.appendChild(renderedCard);
     } catch (err) {
