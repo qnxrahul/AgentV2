@@ -1036,20 +1036,20 @@ function App() {
     }
   };
 
-  const handleCopy = async (value) => {
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      setStatus((prev) => (prev === "generating" ? prev : "copied"));
-      setTimeout(
-        () =>
-          setStatus((prev) => (prev === "copied" ? "completed" : prev)),
-        1500
-      );
-    } catch (err) {
-      setError("Unable to copy to clipboard.");
-    }
-  };
+    const handleCopy = async (value) => {
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        setStatus((prev) => (prev === "generating" ? prev : "copied"));
+        setTimeout(
+          () =>
+            setStatus((prev) => (prev === "copied" ? "completed" : prev)),
+          1500
+        );
+      } catch {
+        setError("Unable to copy to clipboard.");
+      }
+    };
 
   const handleDownloadJson = () => {
     if (!result?.cardJson) {
@@ -1070,14 +1070,36 @@ function App() {
     URL.revokeObjectURL(downloadUrl);
   };
 
-  const cardJsonString = useMemo(() => {
-    if (!result?.cardJson) {
-      return "";
-    }
-    return typeof result.cardJson === "string"
-      ? result.cardJson
-      : JSON.stringify(result.cardJson, null, 2);
-  }, [result]);
+    const cardJsonString = useMemo(() => {
+      if (!result?.cardJson) {
+        return "";
+      }
+      return typeof result.cardJson === "string"
+        ? result.cardJson
+        : JSON.stringify(result.cardJson, null, 2);
+    }, [result]);
+
+    const angularPayloadString = useMemo(() => {
+      if (
+        !result?.adaptiveCardObject &&
+        !result?.adaptiveCardDataObject &&
+        !result?.AdaptiveAnswerMetaData &&
+        !result?.elementCoordinates
+      ) {
+        return "";
+      }
+
+      return JSON.stringify(
+        {
+          adaptiveCardObject: result.adaptiveCardObject ?? [],
+          adaptiveCardDataObject: result.adaptiveCardDataObject ?? [],
+          AdaptiveAnswerMetaData: result.AdaptiveAnswerMetaData ?? null,
+          elementCoordinates: result.elementCoordinates ?? [],
+        },
+        null,
+        2
+      );
+    }, [result]);
 
   const cardPageString = useMemo(() => result?.cardPage ?? "", [result]);
 
@@ -1386,6 +1408,32 @@ function App() {
               </div>
             </div>
           </div>
+
+            {angularPayloadString && (
+              <div className="result-card result-card--fancy">
+                <div className="fancy-card">
+                  <div className="fancy-card-header">
+                    <div className="fancy-card-title">
+                      <span className="fancy-card-dot fancy-card-dot--quaternary" />
+                      <span>Angular Adaptive Payload</span>
+                    </div>
+                    <span className="fancy-card-badge">JSON</span>
+                  </div>
+                  <div className="fancy-card-body">
+                    <pre className="code-block">{angularPayloadString}</pre>
+                  </div>
+                  <div className="fancy-card-actions">
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={() => handleCopy(angularPayloadString)}
+                    >
+                      Copy Angular Payload
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           <div className="result-card result-card--fancy">
             <div className="fancy-card">

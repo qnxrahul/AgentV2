@@ -3,6 +3,9 @@ const cors = require("cors");
 const multer = require("multer");
 const dotenv = require("dotenv");
 const { jsonrepair } = require("jsonrepair");
+const {
+  buildAngularCompatiblePayload,
+} = require("./utils/angularPayload");
 
 dotenv.config();
 
@@ -305,11 +308,17 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
       notes = notes ? `${notes}\n${generatedNote}` : generatedNote;
     }
 
-    res.json({
-      cardJson: resolvedCardJson,
-      cardPage: resolvedCardPage,
-      notes,
-    });
+      const angularPayload = buildAngularCompatiblePayload(resolvedCardJson);
+
+      res.json({
+        cardJson: resolvedCardJson,
+        cardPage: resolvedCardPage,
+        notes,
+        adaptiveCardObject: angularPayload.adaptiveCardObject,
+        adaptiveCardDataObject: angularPayload.adaptiveCardDataObject,
+        AdaptiveAnswerMetaData: angularPayload.AdaptiveAnswerMetaData,
+        elementCoordinates: angularPayload.elementCoordinates,
+      });
   } catch (error) {
     console.error("Generation error:", error);
     res.status(500).json({
