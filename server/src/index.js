@@ -317,6 +317,7 @@ app.post("/api/generate", upload.single("uiImage"), async (req, res) => {
         adaptiveCardObject: angularPayload.adaptiveCardObject,
         adaptiveCardDataObject: angularPayload.adaptiveCardDataObject,
         AdaptiveAnswerMetaData: angularPayload.AdaptiveAnswerMetaData,
+        elementCoordinates: angularPayload.elementCoordinates,
       });
   } catch (error) {
     console.error("Generation error:", error);

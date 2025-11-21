@@ -122,6 +122,114 @@ const extractTextBlocks = (card) => {
   return elements.filter((el) => el.type === "TextBlock" && el.text);
 };
 
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
+const normalizeBoundingBox = (source) => {
+  if (!source) return null;
+
+  let raw = source;
+  if (typeof source === "string") {
+    try {
+      raw = JSON.parse(source);
+    } catch {
+      const parts = source.split(/[,\s]+/).map((part) => Number(part));
+      if (parts.length >= 4 && parts.every((part) => Number.isFinite(part))) {
+        raw = parts;
+      }
+    }
+  }
+
+  let x = null;
+  let y = null;
+  let width = null;
+  let height = null;
+  let right = null;
+  let bottom = null;
+
+  if (Array.isArray(raw)) {
+    [x, y, width, height] = raw.slice(0, 4).map(toFiniteNumber);
+  } else if (typeof raw === "object") {
+    x =
+      toFiniteNumber(
+        raw.x ??
+          raw.left ??
+          raw.l ??
+          raw.minX ??
+          raw.startX ??
+          raw.coordinateX ??
+          raw.cx
+      ) ?? null;
+    y =
+      toFiniteNumber(
+        raw.y ??
+          raw.top ??
+          raw.t ??
+          raw.minY ??
+          raw.startY ??
+          raw.coordinateY ??
+          raw.cy
+      ) ?? null;
+    width = toFiniteNumber(raw.width ?? raw.w ?? raw.spanX ?? raw.deltaX) ?? null;
+    height = toFiniteNumber(raw.height ?? raw.h ?? raw.spanY ?? raw.deltaY) ?? null;
+    right =
+      toFiniteNumber(
+        raw.right ??
+          raw.r ??
+          raw.maxX ??
+          raw.endX ??
+          (Array.isArray(raw) ? raw[2] : undefined)
+      ) ?? null;
+    bottom =
+      toFiniteNumber(
+        raw.bottom ??
+          raw.b ??
+          raw.maxY ??
+          raw.endY ??
+          (Array.isArray(raw) ? raw[3] : undefined)
+      ) ?? null;
+
+    if ((width === null || Number.isNaN(width)) && right !== null && x !== null) {
+      width = right - x;
+    }
+    if ((height === null || Number.isNaN(height)) && bottom !== null && y !== null) {
+      height = bottom - y;
+    }
+  }
+
+  if (right === null && x !== null && width !== null) {
+    right = x + width;
+  }
+  if (bottom === null && y !== null && height !== null) {
+    bottom = y + height;
+  }
+  if (width === null && right !== null && x !== null) {
+    width = right - x;
+  }
+  if (height === null && bottom !== null && y !== null) {
+    height = bottom - y;
+  }
+
+  const hasData = [x, y, width, height, right, bottom].some(
+    (value) => value !== null && Number.isFinite(value)
+  );
+  if (!hasData) return null;
+
+  return {
+    x,
+    y,
+    width,
+    height,
+    right,
+    bottom,
+  };
+};
+
 const extractTitleFromCard = (card) => {
   if (typeof card.title === "string" && card.title.trim()) {
     return card.title.trim();
@@ -212,6 +320,71 @@ const collectStats = (card) => {
   };
 };
 
+const collectElementCoordinates = (card) => {
+  const coordinates = [];
+
+  const traverse = (node, pathSegments = []) => {
+    if (!node) return;
+
+    if (Array.isArray(node)) {
+      node.forEach((child, index) => {
+        traverse(child, [...pathSegments, `[${index}]`]);
+      });
+      return;
+    }
+
+    if (typeof node !== "object") {
+      return;
+    }
+
+    const coordinateSource =
+      node.coordinates ?? node.boundingBox ?? node.bounds ?? node.rect ?? null;
+    const normalizedBox = normalizeBoundingBox(coordinateSource);
+
+    if (normalizedBox) {
+      const elementId =
+        node.id ||
+        node.inputId ||
+        node.name ||
+        node.dataId ||
+        `${node.type || "element"}_${coordinates.length}`;
+      coordinates.push({
+        id: elementId,
+        type: node.type || "Unknown",
+        path: pathSegments.join("."),
+        coordinates: normalizedBox,
+        rawCoordinates: coordinateSource ?? null,
+      });
+    }
+
+    const childKeys = [
+      "body",
+      "items",
+      "columns",
+      "rows",
+      "actions",
+      "cards",
+      "children",
+      "elements",
+    ];
+
+    childKeys.forEach((key) => {
+      const value = node[key];
+      if (!value) return;
+      if (Array.isArray(value)) {
+        value.forEach((child, index) => {
+          traverse(child, [...pathSegments, `${key}[${index}]`]);
+        });
+      } else if (typeof value === "object") {
+        traverse(value, [...pathSegments, key]);
+      }
+    });
+  };
+
+  traverse(card, ["adaptiveCard"]);
+  return coordinates;
+};
+
 const extractInputDefaults = (card) => {
   const defaults = {};
 
@@ -273,6 +446,7 @@ const buildAngularCompatiblePayload = (rawPayload) => {
   const title = extractTitleFromCard(normalized);
   const subtitle = extractSubtitleFromCard(normalized, layoutType);
   const stats = collectStats(normalized);
+  const coordinates = collectElementCoordinates(normalized);
   const defaults = extractInputDefaults(normalized);
   const adaptiveCardDataObject = Object.entries(defaults).map(([key, value]) => ({
     key,
@@ -284,6 +458,7 @@ const buildAngularCompatiblePayload = (rawPayload) => {
     subtitle,
     layoutType,
     stats,
+    coordinates,
     version: normalized.version || "1.5",
     schema: normalized.$schema || "http://adaptivecards.io/schemas/adaptive-card.json",
     generatedAt: new Date().toISOString(),
@@ -303,6 +478,7 @@ const buildAngularCompatiblePayload = (rawPayload) => {
       defaultdata: defaults,
       adaptiveCardSchema: normalized,
       metadata: AdaptiveAnswerMetaData,
+      coordinates,
     },
   ];
 
@@ -310,6 +486,7 @@ const buildAngularCompatiblePayload = (rawPayload) => {
     adaptiveCardObject,
     adaptiveCardDataObject,
     AdaptiveAnswerMetaData,
+    elementCoordinates: coordinates,
   };
 };
 

@@ -1083,7 +1083,8 @@ function App() {
       if (
         !result?.adaptiveCardObject &&
         !result?.adaptiveCardDataObject &&
-        !result?.AdaptiveAnswerMetaData
+        !result?.AdaptiveAnswerMetaData &&
+        !result?.elementCoordinates
       ) {
         return "";
       }
@@ -1093,6 +1094,7 @@ function App() {
           adaptiveCardObject: result.adaptiveCardObject ?? [],
           adaptiveCardDataObject: result.adaptiveCardDataObject ?? [],
           AdaptiveAnswerMetaData: result.AdaptiveAnswerMetaData ?? null,
+          elementCoordinates: result.elementCoordinates ?? [],
         },
         null,
         2
