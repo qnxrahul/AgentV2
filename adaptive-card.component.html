@@ -1,0 +1,39 @@
+<div class="adaptivecard" *ngIf="!EnableExternalJs && !isLayoutbinding && CommonInput?.baseApiUrl!=undefined">
+  <!-- <form (ngSubmit)="onSubmit()" [formGroup]="form">
+     @for (question of adaptiveCardUiElements; track question) {
+       <div class="form-row">
+         <app-form-builder [question]="question" [form]="form"></app-form-builder>
+       </div>
+     }
+     <div class="form-row">
+       <button type="button" class="btn btn-primary" [disabled]="!form.valid" (click)="onSubmit()">Submit</button>
+     </div>
+   </form>     -->
+
+  <app-json-form-view [savedData]="jsonFormData"
+                      [jsonConfig]="schema"
+                      [panelTitle]="panelTitle"
+                      [isPopupView]="isPopupView"
+                      [CommonInput]="CommonInput"
+                      [jsonMetadata]="AdaptiveAnswerMetaData"
+                      [message]="topic | async"
+                      [validateOnload]="false"
+                      (finalSubmit)="getUpdatedData($event)"
+                      (SchemaChange) ="SchemaChangeRequired($event)"
+                      [DisabledFormOn]="DisabledFormOn"
+                      (SaveAction)="onChangeDataEmitter($event)"
+                      (MessageEmitter)="commonAdaptiveCardButtonEmitter($event)"
+                      >
+  </app-json-form-view>
+  
+  <p class="asterisk-warning">mandatory fields are marked with an asterisk (<span class="required-field">*</span>)</p>
+</div>
+<div *ngIf="isLayoutbinding">
+  <lib-layout-block [AdaptiveCardLayoutSaveData]="jsonFormData" [AdaptiveCardLayout]="schema" [layoutMetaData]="AdaptiveAnswerMetaData"
+  (onAdaptivelayoutValuesTransfer)="getUpdatedData($event)" (SchemaChange) ="SchemaChangeRequired($event)" [CommonInput]="CommonInput" 
+  [message]="topic | async" [DisabledFormOn]="DisabledFormOn" (MessageEmitter)="commonAdaptiveCardButtonEmitter($event)">
+  </lib-layout-block>
+</div>
+<div id="{{responseobject.Id}}">
+
+</div>

@@ -1,0 +1,21 @@
+<div class="simple-accordion">
+    <div class="accordion-container">
+            <div class="accordion-title" (click)="togleAccordion()">
+                <span>
+                    <i class="bi  {{ isOpen? 'bi-chevron-up': 'bi-chevron-down' }}"></i> {{ field.label }} 
+                </span> 
+               
+            </div>
+            <div class="accordion-body {{ isOpen? 'open': 'close' }}" #accordianBody>
+                    <div [formGroup]="formGroup">
+                            <!-- <label>{{ field.label }}<span class="mandatoryField" *ngIf="field.required">*</span>
+                            </label> -->
+                            <i class="bi bi-eye" *ngIf="field.helperText" title="{{ field.helperText }}"></i>
+                        <json-editor [options]="editorOptions" [data]="data"
+                                    (change)="onchangeJSONData($event,field.editscope)"></json-editor>
+                            </div>
+            </div>
+        </div>
+    </div>
+    
+    
